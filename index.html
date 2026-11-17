@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathProof — прототип v0.1</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1d2130; --border:#2a2f42;
+    --text:#e6e8f0; --dim:#8b91a7; --acc:#7c6cff; --ok:#3ecf8e; --warn:#f5c451; --err:#ff6b6b;
+    --mono:'Cascadia Code','JetBrains Mono',Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:15px/1.55 system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:19px}.logo span{color:var(--acc)}
+  .sub{color:var(--dim);font-size:12px}
+  .tabs{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .tab{background:var(--panel);border:1px solid var(--border);color:var(--dim);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+  .tab.active{color:var(--text);border-color:var(--acc);background:var(--panel2)}
+  main{flex:1;display:grid;grid-template-columns:390px 1fr;gap:16px;padding:16px 20px;max-width:1500px;width:100%;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:16px;margin-bottom:6px}
+  .diff{color:var(--warn);font-size:13px;letter-spacing:2px}
+  .stmt{color:#c7cbdb;font-size:14px;margin-top:8px}
+  .stmt b{color:var(--text)}
+  details{margin-top:10px}
+  summary{cursor:pointer;color:var(--acc);font-size:13px}
+  details p{color:var(--dim);font-size:13px;margin-top:6px}
+  .rule{display:flex;flex-direction:column;gap:2px;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13px}
+  .rule:last-child{border:none}
+  .rule code{font-family:var(--mono);color:#a8b4ff;font-size:12.5px}
+  .rule .rn{color:var(--ok);font-family:var(--mono)}
+  .rule .side{color:var(--warn);font-size:11.5px}
+  .toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  button.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px}
+  button.btn:hover{border-color:var(--acc)}
+  button.run{background:var(--acc);border-color:var(--acc);font-weight:700;color:#fff}
+  .edwrap{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;height:420px}
+  .gutter{font-family:var(--mono);font-size:13.5px;line-height:1.5;color:#4a5068;background:var(--panel2);padding:12px 8px;text-align:right;user-select:none;overflow:hidden;min-width:42px;white-space:pre}
+  textarea{flex:1;background:transparent;border:none;outline:none;resize:none;color:#dfe4ff;font-family:var(--mono);font-size:13.5px;line-height:1.5;padding:12px;white-space:pre;overflow:auto}
+  .results{margin-top:14px}
+  .banner{padding:12px 16px;border-radius:10px;font-weight:700;margin-bottom:10px;border:1px solid}
+  .banner.ok{background:rgba(62,207,142,.1);border-color:var(--ok);color:var(--ok)}
+  .banner.num{background:rgba(245,196,81,.1);border-color:var(--warn);color:var(--warn)}
+  .banner.bad{background:rgba(255,107,107,.1);border-color:var(--err);color:var(--err)}
+  .banner.idle{background:var(--panel);border-color:var(--border);color:var(--dim);font-weight:400}
+  .row{display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13.5px;align-items:flex-start}
+  .row .ic{flex-shrink:0}
+  .row .nm{font-family:var(--mono);color:#a8b4ff;flex-shrink:0}
+  .row .ln{color:#4a5068;font-size:11.5px;flex-shrink:0}
+  .row.ok .ic{color:var(--ok)} .row.bad .ic{color:var(--err)} .row.info .ic{color:var(--dim)}
+  .row .msg{color:#c7cbdb}
+  .row.bad .msg{color:#ffb3b3}
+  pre.ce{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0 4px;font-family:var(--mono);font-size:12px;color:#ffd9a8;overflow-x:auto}
+  .legend{color:var(--dim);font-size:12px;margin-top:10px}
+  footer{padding:10px 20px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center}
+  @media(max-width:920px){
+    main{grid-template-columns:1fr;padding:12px}
+    .edwrap{height:340px}
+    .tabs{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">∎ Math<span>Proof</span></div>
+    <div class="sub">прототип v0.1 · формальная проверка доказательств · линейная алгебра</div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<main>
+  <aside>
+    <div class="card">
+      <h2 id="tTitle"></h2>
+      <div class="diff" id="tDiff"></div>
+      <div class="stmt" id="tStmt"></div>
+      <details><summary>Подсказка</summary><p id="tHint"></p></details>
+    </div>
+    <div class="card">
+      <h2>Доступные правила</h2>
+      <div id="tRules"></div>
+      <div class="legend">Обоснование шага: <code>by &lt;правило&gt;</code>, <code>by &lt;правило&gt; &lt;шаг&gt;...</code> (для правил с предпосылками) или <code>by &lt;шаг&gt; &lt;шаг&gt;...</code>. <code>by algebra</code> — численная проверка (понижает уровень доверия).</div>
+    </div>
+  </aside>
+  <section>
+    <div class="toolbar">
+      <button class="btn run" id="btnRun">▶ Проверить (Ctrl+Enter)</button>
+      <button class="btn" id="btnSol">Эталонное решение</button>
+      <button class="btn" id="btnReset">Сбросить</button>
+    </div>
+    <div class="edwrap">
+      <div class="gutter" id="gutter">1</div>
+      <textarea id="ed" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    </div>
+    <div class="results" id="res">
+      <div class="banner idle">Напишите доказательство и нажмите «Проверить». Черновик сохраняется локально.</div>
+    </div>
+  </section>
+</main>
+<footer>Работает полностью офлайн · проверка: паттерн-матчинг правил + конгруэнтное замыкание + поиск контрпримеров в случайных моделях</footer>
+
+<script>
+'use strict';
+/* ============================================================
+   1. МАТРИЧНАЯ АРИФМЕТИКА (численные модели теории)
+   ============================================================ */
+const eye=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+const mT=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+const mAdd=(A,B,s=1)=>A.map((r,i)=>r.map((v,j)=>v+s*B[i][j]));
+const mMul=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+function mInv(M){
+  const n=M.length, A=M.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>i===j?1:0)]);
+  for(let c=0;c<n;c++){
+    let p=c; for(let r=c+1;r<n;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
+    if(Math.abs(A[p][c])<1e-9) return null;
+    [A[c],A[p]]=[A[p],A[c]];
+    const d=A[c][c]; for(let j=0;j<2*n;j++) A[c][j]/=d;
+    for(let r=0;r<n;r++){ if(r===c) continue; const f=A[r][c]; for(let j=0;j<2*n;j++) A[r][j]-=f*A[c][j]; }
+  }
+  return A.map(r=>r.slice(n));
+}
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const rMat=(r,c)=>Array.from({length:r},()=>Array.from({length:c},()=>rnd(-3,3)));
+function rInvMat(n){ for(let t=0;t<80;t++){ const M=rMat(n,n); if(mInv(M)) return M; } return eye(n); }
+function mEq(A,B){
+  if(!A||!B||A.length!==B.length||A[0].length!==B[0].length) return false;
+  for(let i=0;i<A.length;i++) for(let j=0;j<A[0].length;j++){
+    const d=Math.abs(A[i][j]-B[i][j]);
+    if(d>1e-6*Math.max(1,Math.abs(A[i][j]),Math.abs(B[i][j]))) return false;
+  }
+  return true;
+}
+const fM=A=>A.map(r=>r.map(v=>(Math.abs(v)<1e-9?0:v).toFixed(2).padStart(7)).join('')).join('\n');
+
+/* ============================================================
+   2. ЛЕКСЕР
+   ============================================================ */
+class PErr extends Error{ constructor(m,line){ super(m); this.line=line; } }
+const KW=new Set(['theory','given','goal','proof','let','step','by','assume','qed','invertible','Matrix','Nat','algebra']);
+function lex(src){
+  const T=[]; let i=0, line=1;
+  while(i<src.length){
+    const c=src[i];
+    if(c==='\n'){line++;i++;continue;}
+    if(c===' '||c==='\t'||c==='\r'){i++;continue;}
+    if((c==='-'&&src[i+1]==='-')||(c==='/'&&src[i+1]==='/')){ while(i<src.length&&src[i]!=='\n')i++; continue; }
+    if(/[A-Za-z_?]/.test(c)){ let j=i+1; while(j<src.length&&/[A-Za-z0-9_]/.test(src[j]))j++; const w=src.slice(i,j); T.push({t:KW.has(w)?w:'id',v:w,line}); i=j; continue; }
+    if(/[0-9]/.test(c)){ let j=i+1; while(j<src.length&&/[0-9]/.test(src[j]))j++; T.push({t:'int',v:+src.slice(i,j),line}); i=j; continue; }
+    if(c==='='&&src[i+1]==='='){T.push({t:'==',line});i+=2;continue;}
+    if(c==='^'){
+      if(src[i+1]==='T'){T.push({t:'^T',line});i+=2;continue;}
+      if(src[i+1]==='-'&&src[i+2]==='1'){T.push({t:'^-1',line});i+=3;continue;}
+      throw new PErr("После '^' ожидается 'T' или '-1'",line);
+    }
+    if('():,=+*-'.includes(c)){T.push({t:c,line});i++;continue;}
+    throw new PErr(`Неизвестный символ '${c}'`,line);
+  }
+  T.push({t:'eof',line}); return T;
+}
+
+/* ============================================================
+   3. ПАРСЕР (рекурсивный спуск) -> AST
+   ============================================================ */
+function makeParser(src){
+  const T=lex(src); let p=0;
+  const peek=()=>T[p], next=()=>T[p++];
+  const acc=t=>peek().t===t?(next(),true):false;
+  const exp=t=>{ const k=next(); if(k.t!==t) throw new PErr(`Ожидалось '${t}', получено '${k.v??k.t}'`,k.line); return k; };
+  const ident=()=>exp('id').v;
+
+  function atom(){
+    if(acc('(')){ const e=expr(); exp(')'); return e; }
+    const k=next();
+    if(k.t!=='id') throw new PErr(`Ожидалось имя или '(', получено '${k.v??k.t}'`,k.line);
+    if(k.v==='I') return {op:'const',name:'I'};
+    return {op:'var',name:k.v,meta:k.v[0]==='?'};
+  }
+  function post(){ let a=atom(); for(;;){ if(acc('^T')) a={op:'tr',args:[a]}; else if(acc('^-1')) a={op:'inv',args:[a]}; else break; } return a; }
+  function term(){ let a=post(); while(acc('*')) a={op:'mul',args:[a,post()]}; return a; }
+  function expr(){ let a=term(); for(;;){ if(acc('+')) a={op:'add',args:[a,term()]}; else if(acc('-')) a={op:'sub',args:[a,term()]}; else break; } return a; }
+  function eq(){ const l=expr(); exp('=='); return {l,r:expr()}; }
+
+  function program(){
+    exp('theory'); const theory=ident(); exp('given');
+    const dims=[], mats=[], assumes=[];
+    while(peek().t==='id'||peek().t==='assume'){
+      if(acc('assume')){ exp('invertible'); exp('('); assumes.push(ident()); exp(')'); continue; }
+      const names=[ident()]; while(acc(',')) names.push(ident());
+      exp(':');
+      if(acc('Nat')){ names.forEach(n=>dims.push(n)); }
+      else{ exp('Matrix'); exp('('); const r=dim(); exp(','); const c=dim(); exp(')'); names.forEach(n=>mats.push({name:n,r,c})); }
+    }
+    exp('goal'); const goal=eq();
+    exp('proof'); const steps=[];
+    while(peek().t==='let'||peek().t==='step'){
+      const k=next();
+      if(k.t==='let'){ const name=ident(); exp('='); steps.push({kind:'let',name,expr:expr(),line:k.line}); }
+      else{
+        const name=ident(); exp(':'); const e=eq(); exp('by');
+        let mode, refs=[];
+        if(acc('algebra')) mode='algebra';
+        else{ mode='refs'; while(peek().t==='id') refs.push(next().v); if(!refs.length) throw new PErr('После by нужно обоснование',k.line); }
+        steps.push({kind:'step',name,lhs:e.l,rhs:e.r,mode,refs,line:k.line});
+      }
+    }
+    exp('qed'); exp('eof');
+    return {theory,dims,mats,assumes,goal,steps};
+  }
+  function dim(){ const k=next(); if(k.t==='int'||k.t==='id') return k.v; throw new PErr('Ожидалась размерность',k.line); }
+  return {program,eqOnly:()=>{const e=eq();exp('eof');return e;}};
+}
+
+/* ============================================================
+   4. КЛЮЧИ ТЕРМОВ + КОНГРУЭНТНОЕ ЗАМЫКАНИЕ (ядро проверки)
+   ============================================================ */
+function tkey(t){
+  if(t.op==='var') return 'v:'+t.name;
+  if(t.op==='const') return 'C:'+t.name;
+  return t.op+'('+t.args.map(tkey).join(',')+')';
+}
+function closure(eqs){ // eqs: [{l,r}] — доказанные равенства
+  const nodes=new Map(), parent=new Map();
+  function add(t){ const k=tkey(t); if(!nodes.has(k)){ nodes.set(k,{op:t.op,args:(t.args||[]).map(tkey)}); parent.set(k,k); (t.args||[]).forEach(add);} return k; }
+  eqs.forEach(e=>{add(e.l);add(e.r);});
+  function find(k){ while(parent.get(k)!==k){ parent.set(k,parent.get(parent.get(k))); k=parent.get(k);} return k; }
+  function union(a,b){ a=find(a); b=find(b); if(a!==b) parent.set(a,b); }
+  eqs.forEach(e=>union(tkey(e.l),tkey(e.r)));
+  let ch=true;
+  while(ch){ ch=false; const A=[...nodes.entries()];
+    for(let i=0;i<A.length;i++) for(let j=i+1;j<A.length;j++){
+      const [ka,a]=A[i],[kb,b]=A[j];
+      if(a.op===b.op&&a.args.length===b.args.length&&a.args.length>0&&find(ka)!==find(kb)
+         &&a.args.every((x,q)=>find(x)===find(b.args[q]))){ union(ka,kb); ch=true; }
+    }
+  }
+  return {eq:(x,y)=>find(tkey(x))===find(tkey(y))};
+}
+
+/* ============================================================
+   5. БИБЛИОТЕКА ПРАВИЛ (схемы с метапеременными ?X,?Y,?Z)
+   ============================================================ */
+function mkRule(id,schema,premises=[],side=null){
+  const P=makeParser(schema);
+  const c=P.eqOnly();
+  return {id,display:schema.replace(/\?/g,''),concl:c,premises:premises.map(s=>makeParser(s).eqOnly()),side};
+}
+const RULES={
+  mul_assoc:          mkRule('mul_assoc','(?X * ?Y) * ?Z == ?X * (?Y * ?Z)'),
+  one_mul:            mkRule('one_mul','I * ?X == ?X'),
+  mul_one:            mkRule('mul_one','?X * I == ?X'),
+  mul_inv:            mkRule('mul_inv','?X * ?X^-1 == I',[],'inv'),
+  inv_mul:            mkRule('inv_mul','?X^-1 * ?X == I',[],'inv'),
+  inv_unique:         mkRule('inv_unique','?Y == ?X^-1',['?X * ?Y == I','?Y * ?X == I']),
+  transpose_mul:      mkRule('transpose_mul','(?X * ?Y)^T == ?Y^T * ?X^T'),
+  transpose_transpose:mkRule('transpose_transpose','(?X^T)^T == ?X'),
+  transpose_add:      mkRule('transpose_add','(?X + ?Y)^T == ?X^T + ?Y^T'),
+};
+// Паттерн-матчинг: схема правила против конкретного шага (с раскрытием let-определений)
+function match(p,g,B,lets){
+  if(p.op==='var'&&p.meta){
+    if(B[p.name]) return tkey(B[p.name])===tkey(g);
+    B[p.name]=g; return true;
+  }
+  while(g.op==='var'&&lets[g.name]&&p.op!=='var') g=lets[g.name];
+  if(p.op!==g.op) return false;
+  if(p.op==='var'||p.op==='const') return p.name===g.name;
+  return p.args.every((a,i)=>match(a,g.args[i],B,lets));
+}
+function subst(p,B){ if(p.op==='var'&&p.meta) return B[p.name]; if(p.args) return {op:p.op,args:p.args.map(a=>subst(a,B))}; return p; }
+function knownInv(k,set){
+  if(set.has(k)) return true;
+  if(k.startsWith('inv(')) return knownInv(k.slice(4,-1),set);
+  return false;
+}
+
+/* ============================================================
+   6. ПРОВЕРКА РАЗМЕРНОСТЕЙ (типизация)
+   ============================================================ */
+function shape(t,env,line){
+  const err=m=>{throw new PErr(m,line);};
+  switch(t.op){
+    case 'const': return {r:null,c:null};
+    case 'var': if(!env[t.name]) err(`'${t.name}' не объявлен в блоке given / let`); return {...env[t.name]};
+    case 'tr': { const s=shape(t.args[0],env,line); return {r:s.c,c:s.r}; }
+    case 'inv': { const s=shape(t.args[0],env,line); if(s.r!=null&&s.c!=null&&s.r!==s.c) err('Обратная матрица существует только у квадратной'); return s; }
+    case 'add': case 'sub': {
+      const a=shape(t.args[0],env,line), b=shape(t.args[1],env,line);
+      if(a.r!=null&&b.r!=null&&a.r!==b.r||a.c!=null&&b.c!=null&&a.c!==b.c) err('Сложение матриц разных размерностей');
+      return {r:a.r??b.r,c:a.c??b.c};
+    }
+    case 'mul': {
+      let a=shape(t.args[0],env,line), b=shape(t.args[1],env,line);
+      if(a.r==null&&a.c==null) a={r:b.r,c:b.r};       // I слева
+      else if(b.r==null&&b.c==null) b={r:a.c,c:a.c};  // I справа
+      if(a.c!=null&&b.r!=null&&a.c!==b.r) err(`Несогласованные размерности в произведении: (...×${a.c}) * (${b.r}×...)`);
+      return {r:a.r,c:b.c};
+    }
+  }
+}
+const shEq=(a,b)=>(a.r==null||b.r==null||a.r===b.r)&&(a.c==null||b.c==null||a.c===b.c);
+
+/* ============================================================
+   7. ЧИСЛЕННАЯ ПРОВЕРКА (поиск контрпримеров)
+   ============================================================ */
+function ev(t,env){
+  switch(t.op){
+    case 'var': return env[t.name];
+    case 'const': return env.__eye;
+    case 'tr': return mT(ev(t.args[0],env));
+    case 'inv': { const M=mInv(ev(t.args[0],env)); if(!M) throw {skip:true}; return M; }
+    case 'add': return mAdd(ev(t.args[0],env),ev(t.args[1],env));
+    case 'sub': return mAdd(ev(t.args[0],env),ev(t.args[1],env),-1);
+    case 'mul': return mMul(ev(t.args[0],env),ev(t.args[1],env));
+  }
+}
+function numericCheck(lhs,rhs,mats,assumes,lets,tries=5){
+  const syms=[...new Set(mats.flatMap(m=>[m.r,m.c]).filter(d=>typeof d==='string'))];
+  for(let t=0;t<tries;t++){
+    const pool=[2,3,4,5].sort(()=>Math.random()-.5), dv={};
+    syms.forEach((s,i)=>dv[s]=pool[i%4]);
+    const res=d=>typeof d==='number'?d:dv[d];
+    const env={}, snap={};
+    try{
+      for(const m of mats){
+        const r=res(m.r), c=res(m.c);
+        env[m.name]=(assumes.includes(m.name)&&r===c)?rInvMat(r):rMat(r,c);
+        snap[m.name]=env[m.name];
+      }
+      env.__eye=eye(syms.length?dv[syms[0]]:2);
+      for(const L of lets) env[L.name]=ev(L.expr,env);
+      const A=ev(lhs,env), Bv=ev(rhs,env);
+      if(!mEq(A,Bv)) return {ok:false,ce:{dv,snap,A,B:Bv}};
+    }catch(e){ if(e&&e.skip) continue; throw e; }
+  }
+  return {ok:true};
+}
+
+/* ============================================================
+   8. ЗАДАЧИ
+   ============================================================ */
+const TASKS=[
+{
+  id:'inv-product', title:'Обратная к произведению', diff:'★★★',
+  stmt:'Пусть <b>A</b> и <b>B</b> — обратимые матрицы размера n×n. Докажите, что <b>(A·B)⁻¹ = B⁻¹·A⁻¹</b>.<br><br>Каждый шаг — равенство с обоснованием: ссылкой на правило или на ранее доказанные шаги. Цель проверяется по всем доказанным шагам в момент <code>qed</code>.',
+  hint:'Введите X = B⁻¹·A⁻¹ и покажите двумя цепочками, что (A·B)·X = I и X·(A·B) = I (ассоциативность + свойства обратной). Затем примените правило единственности обратной inv_unique с двумя предпосылками.',
+  rules:['mul_assoc','one_mul','mul_one','mul_inv','inv_mul','inv_unique'],
+  given:{mats:{A:['n','n'],B:['n','n']},assumes:['A','B']},
+  goalSrc:'(A * B)^-1 == B^-1 * A^-1',
+  skeleton:
+`theory LinearAlgebra
+
+given
+    n : Nat
+    A, B : Matrix(n, n)
+    assume invertible(A)
+    assume invertible(B)
+
+goal
+    (A * B)^-1 == B^-1 * A^-1
+
+proof
+    -- ваши шаги здесь
+
+qed`,
+  solution:
+`theory LinearAlgebra
+
+given
+    n : Nat
+    A, B : Matrix(n, n)
+    assume invertible(A)
+    assume invertible(B)
+
+goal
+    (A * B)^-1 == B^-1 * A^-1
+
+proof
+    let X = B^-1 * A^-1
+
+    step s1 : (A * B) * X == A * (B * X)          by mul_assoc
+    step s2 : B * X == (B * B^-1) * A^-1          by mul_assoc
+    step s3 : B * B^-1 == I                       by mul_inv
+    step s4 : (B * B^-1) * A^-1 == I * A^-1       by s3
+    step s5 : I * A^-1 == A^-1                    by one_mul
+    step s6 : B * X == A^-1                       by s2 s4 s5
+    step s7 : A * (B * X) == A * A^-1             by s6
+    step s8 : A * A^-1 == I                       by mul_inv
+    step s9 : (A * B) * X == I                    by s1 s7 s8
+
+    step t1 : X * (A * B) == (X * A) * B          by mul_assoc
+    step t2 : X * A == B^-1 * (A^-1 * A)          by mul_assoc
+    step t3 : A^-1 * A == I                       by inv_mul
+    step t4 : B^-1 * (A^-1 * A) == B^-1 * I       by t3
+    step t5 : B^-1 * I == B^-1                    by mul_one
+    step t6 : X * A == B^-1                       by t2 t4 t5
+    step t7 : (X * A) * B == B^-1 * B             by t6
+    step t8 : B^-1 * B == I                       by inv_mul
+    step t9 : X * (A * B) == I                    by t1 t7 t8
+
+    step fin : (A * B)^-1 == X                    by inv_unique s9 t9
+qed`
+},
+{
+  id:'sym-aat', title:'Симметричность A·Aᵀ', diff:'★',
+  stmt:'Пусть <b>A</b> — матрица размера m×n. Докажите, что матрица <b>A·Aᵀ</b> симметрична: <b>(A·Aᵀ)ᵀ = A·Aᵀ</b>.',
+  hint:'Раскройте транспонирование произведения (transpose_mul), затем примените инволютивность транспонирования (transpose_transpose) и соберите цепочку.',
+  rules:['transpose_mul','transpose_transpose','transpose_add'],
+  given:{mats:{A:['m','n']},assumes:[]},
+  goalSrc:'(A * A^T)^T == A * A^T',
+  skeleton:
+`theory LinearAlgebra
+
+given
+    m, n : Nat
+    A : Matrix(m, n)
+
+goal
+    (A * A^T)^T == A * A^T
+
+proof
+    -- ваши шаги здесь
+
+qed`,
+  solution:
+`theory LinearAlgebra
+
+given
+    m, n : Nat
+    A : Matrix(m, n)
+
+goal
+    (A * A^T)^T == A * A^T
+
+proof
+    step s1 : (A * A^T)^T == (A^T)^T * A^T   by transpose_mul
+    step s2 : (A^T)^T == A                   by transpose_transpose
+    step s3 : (A * A^T)^T == A * A^T         by s1 s2
+qed`
+}];
+TASKS.forEach(t=>t.goalEq=makeParser(t.goalSrc).eqOnly());
+
+/* ============================================================
+   9. ВЕРИФИКАТОР
+   ============================================================ */
+function verify(src,task){
+  const rows=[]; let prog;
+  try{ prog=makeParser(src).program(); }
+  catch(e){ return {status:'parse',message:`Синтаксическая ошибка (строка ${e.line??'?'}): ${e.message}`,rows}; }
+
+  // Условие задачи должно быть нетронуто
+  for(const [name,[r,c]] of Object.entries(task.given.mats)){
+    const d=prog.mats.find(m=>m.name===name);
+    if(!d||d.r!==r||d.c!==c) return {status:'cond',message:`Блок given изменён: требуется ${name} : Matrix(${r}, ${c}). Восстановите условие.`,rows};
+  }
+  for(const a of task.given.assumes) if(!prog.assumes.includes(a))
+    return {status:'cond',message:`Блок given изменён: требуется assume invertible(${a}).`,rows};
+  if(tkey(prog.goal.l)!==tkey(task.goalEq.l)||tkey(prog.goal.r)!==tkey(task.goalEq.r))
+    return {status:'cond',message:'Цель (goal) изменена — её нельзя менять.',rows};
+
+  const env={}, lets={}, letEqs=[], facts={}, invSet=new Set(prog.assumes.map(a=>'v:'+a));
+  const seen=new Set(); let algebraUsed=false, anyFail=false;
+  const trivial=t=>({l:t,r:t}); // регистрация термов шага без их склейки
+
+  for(const s of prog.steps){
+    if(seen.has(s.name)){ rows.push({name:s.name,line:s.line,ok:false,msg:'Имя уже использовано'}); anyFail=true; continue; }
+    seen.add(s.name);
+    try{
+      if(s.kind==='let'){
+        const sh=shape(s.expr,env,s.line);
+        env[s.name]=sh; lets[s.name]=s.expr;
+        letEqs.push({l:{op:'var',name:s.name},r:s.expr});
+        facts[s.name]={l:{op:'var',name:s.name},r:s.expr};
+        rows.push({name:s.name,line:s.line,ok:true,info:true,msg:`определение принято (${sh.r??'?'}×${sh.c??'?'})`});
+        continue;
+      }
+      const sl=shape(s.lhs,env,s.line), sr=shape(s.rhs,env,s.line);
+      if(!shEq(sl,sr)) throw new PErr('Размерности левой и правой части не совпадают',s.line);
+
+      let ok=false, msg='';
+      const num=()=>numericCheck(s.lhs,s.rhs,prog.mats,prog.assumes,Object.values(lets).map((e,i)=>({name:Object.keys(lets)[i],expr:e})));
+
+      if(s.mode==='algebra'){
+        const nc=num();
+        if(nc.ok){ ok=true; algebraUsed=true; msg='принято численно (вероятностная проверка, без формального обоснования)'; }
+        else msg='утверждение ЛОЖНО — найден контрпример';
+        if(!ok){ const r={name:s.name,line:s.line,ok:false,msg}; if(nc.ce) r.ce=nc.ce; rows.push(r); anyFail=true; continue; }
+      }
+      else if(RULES[s.refs[0]]){
+        const rule=RULES[s.refs[0]];
+        if(!task.rules.includes(rule.id)) throw new PErr(`Правило '${rule.id}' недоступно в этой задаче`,s.line);
+        let B=null;
+        for(const [L,R] of [[s.lhs,s.rhs],[s.rhs,s.lhs]]){
+          const b={}; if(match(rule.concl.l,L,b,lets)&&match(rule.concl.r,R,b,lets)){ B=b; break; }
+        }
+        if(B){
+          if(rule.side==='inv'&&!knownInv(tkey(B['?X']),invSet))
+            msg=`Для правила ${rule.id} нужно знать, что ${tkey(B['?X']).replace('v:','')} обратима (assume invertible(...))`;
+          else{
+            const cited=[];
+            for(const ref of s.refs.slice(1)){
+              if(!facts[ref]) throw new PErr(`Предпосылка '${ref}' не доказана ранее`,s.line);
+              cited.push(facts[ref]);
+            }
+            const cl=closure([...letEqs,...cited,trivial(s.lhs),trivial(s.rhs)]);
+            const bad=rule.premises.find(p=>{const i={l:subst(p.l,B),r:subst(p.r,B)};return !cl.eq(i.l,i.r);});
+            if(bad) msg=`Предпосылка правила ${rule.id} (${rule.display.includes('==')?'см. схему':''}) не обоснована указанными шагами`;
+            else{ ok=true; msg=`частный случай правила ${rule.id}`+(rule.premises.length?' (предпосылки проверены)':''); }
+          }
+        }else{
+          const nc=num();
+          msg=nc.ok?`Утверждение верно численно, но НЕ является частным случаем правила ${rule.id} — неверное обоснование`
+                   :'Утверждение ЛОЖНО — найден контрпример';
+          if(!nc.ok){ rows.push({name:s.name,line:s.line,ok:false,msg,ce:nc.ce}); anyFail=true; continue; }
+        }
+      }
+      else{
+        const cited=[];
+        for(const ref of s.refs){
+          if(RULES[ref]) throw new PErr(`Правило '${ref}' должно стоять первым в списке by`,s.line);
+          if(!facts[ref]) throw new PErr(`Ссылка '${ref}': шаг не доказан ранее или не существует`,s.line);
+          cited.push(facts[ref]);
+        }
+        const cl=closure([...letEqs,...cited,trivial(s.lhs),trivial(s.rhs)]);
+        if(cl.eq(s.lhs,s.rhs)){ ok=true; msg='следует из указанных шагов (конгруэнтное замыкание)'; }
+        else{
+          const nc=num();
+          if(nc.ok) msg='Утверждение верно численно, но НЕ следует из указанных шагов — добавьте ссылки или промежуточные шаги';
+          else{ rows.push({name:s.name,line:s.line,ok:false,msg:'Утверждение ЛОЖНО — найден контрпример',ce:nc.ce}); anyFail=true; continue; }
+        }
+      }
+      rows.push({name:s.name,line:s.line,ok,msg});
+      if(ok) facts[s.name]={l:s.lhs,r:s.rhs}; else anyFail=true;
+    }catch(e){
+      rows.push({name:s.name,line:s.line,ok:false,msg:e.message}); anyFail=true;
+    }
+  }
+
+  // qed: цель должна выводиться из ВСЕХ доказанных шагов
+  const all=[...letEqs,...Object.entries(facts).filter(([k])=>!lets[k]).map(([,v])=>v),trivial(prog.goal.l),trivial(prog.goal.r)];
+  const goalOk=closure(all).eq(prog.goal.l,prog.goal.r);
+  rows.push({name:'qed',line:'—',ok:goalOk&&!anyFail,
+    msg:goalOk?(anyFail?'цель выводится, но в доказательстве есть ошибочные шаги':'цель выведена из доказанных шагов ✓'):'цель НЕ выводится из доказанных шагов'});
+  const status=(goalOk&&!anyFail)?(algebraUsed?'num':'formal'):'fail';
+  return {status,rows,algebraUsed};
+}
+
+/* ============================================================
+   10. UI
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+let cur=TASKS[0];
+
+function renderTabs(){
+  $('tabs').innerHTML=TASKS.map(t=>`<button class="tab${t===cur?' active':''}" data-id="${t.id}">${esc(t.title)} ${t.diff}</button>`).join('');
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ save(); cur=TASKS.find(t=>t.id===b.dataset.id); loadTask(); });
+}
+function loadTask(){
+  renderTabs();
+  $('tTitle').textContent=cur.title; $('tDiff').textContent=cur.diff;
+  $('tStmt').innerHTML=cur.stmt; $('tHint').textContent=cur.hint;
+  $('tRules').innerHTML=cur.rules.map(id=>{const r=RULES[id];
+    return `<div class="rule"><span class="rn">${id}</span><code>${esc(r.display)}</code>${r.side?'<span class="side">требует: обратимость X</span>':''}${r.premises.length?`<span class="side">предпосылки: ${r.premises.map(p=>'см. схему ('+r.premises.length+')').join('')[0]||''}</span>`:''}</div>`;}).join('');
+  $('ed').value=localStorage.getItem('mp_'+cur.id)||cur.skeleton;
+  gutter(); $('res').innerHTML='<div class="banner idle">Напишите доказательство и нажмите «Проверить».</div>';
+}
+function save(){ localStorage.setItem('mp_'+cur.id,$('ed').value); }
+function gutter(){
+  const n=$('ed').value.split('\n').length;
+  $('gutter').textContent=Array.from({length:n},(_,i)=>i+1).join('\n');
+  $('gutter').scrollTop=$('ed').scrollTop;
+}
+function ceText(ce){
+  let s='Контрпример (размерности: '+Object.entries(ce.dv).map(([k,v])=>k+'='+v).join(', ')+'):\n';
+  for(const [k,M] of Object.entries(ce.snap)) s+=k+' =\n'+fM(M)+'\n';
+  s+='Левая часть =\n'+fM(ce.A)+'\nПравая часть =\n'+fM(ce.B);
+  return s;
+}
+function run(){
+  save();
+  const v=verify($('ed').value,cur);
+  let html='';
+  if(v.status==='parse'||v.status==='cond') html=`<div class="banner bad">❌ ${esc(v.message)}</div>`;
+  else if(v.status==='formal') html='<div class="banner ok">✅ Доказательство ПРИНЯТО — формальная проверка (правила + эквациональная логика)</div>';
+  else if(v.status==='num') html='<div class="banner num">🟡 Принято, но с численными шагами (by algebra). Для высшего рейтинга обоснуйте каждый шаг правилами.</div>';
+  else html='<div class="banner bad">❌ Доказательство не принято — см. ошибки ниже</div>';
+  for(const r of v.rows){
+    const cls=r.ok?(r.info?'info':'ok'):'bad', ic=r.ok?(r.info?'·':'✓'):'✗';
+    html+=`<div class="row ${cls}"><span class="ic">${ic}</span><span class="nm">${esc(r.name)}</span><span class="ln">стр.${r.line}</span><span class="msg">${esc(r.msg)}${r.ce?`<pre class="ce">${esc(ceText(r.ce))}</pre>`:''}</span></div>`;
+  }
+  $('res').innerHTML=html;
+}
+$('btnRun').onclick=run;
+$('btnSol').onclick=()=>{ if(confirm('Заменить содержимое редактора эталонным решением?')){ $('ed').value=cur.solution; gutter(); save(); } };
+$('btnReset').onclick=()=>{ if(confirm('Сбросить к заготовке задачи?')){ $('ed').value=cur.skeleton; gutter(); save(); } };
+let svT; $('ed').addEventListener('input',()=>{ gutter(); clearTimeout(svT); svT=setTimeout(save,300); });
+$('ed').addEventListener('scroll',()=>{ $('gutter').scrollTop=$('ed').scrollTop; });
+$('ed').addEventListener('keydown',e=>{
+  if(e.key==='Tab'){ e.preventDefault(); const t=e.target,s=t.selectionStart; t.value=t.value.slice(0,s)+'    '+t.value.slice(t.selectionEnd); t.selectionStart=t.selectionEnd=s+4; gutter(); }
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); run(); }
+});
+loadTask();
+</script>
+</body>
+</html>
