@@ -3,620 +3,791 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MathProof — прототип v0.1</title>
+<title>MathProof · Lean — доказывай как в Lean</title>
 <style>
-  :root{
-    --bg:#0f1117; --panel:#171a23; --panel2:#1d2130; --border:#2a2f42;
-    --text:#e6e8f0; --dim:#8b91a7; --acc:#7c6cff; --ok:#3ecf8e; --warn:#f5c451; --err:#ff6b6b;
-    --mono:'Cascadia Code','JetBrains Mono',Consolas,monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font:15px/1.55 system-ui,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
-  header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-  .logo{font-weight:800;font-size:19px}.logo span{color:var(--acc)}
-  .sub{color:var(--dim);font-size:12px}
-  .tabs{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
-  .tab{background:var(--panel);border:1px solid var(--border);color:var(--dim);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px}
-  .tab.active{color:var(--text);border-color:var(--acc);background:var(--panel2)}
-  main{flex:1;display:grid;grid-template-columns:390px 1fr;gap:16px;padding:16px 20px;max-width:1500px;width:100%;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
-  .card h2{font-size:16px;margin-bottom:6px}
-  .diff{color:var(--warn);font-size:13px;letter-spacing:2px}
-  .stmt{color:#c7cbdb;font-size:14px;margin-top:8px}
-  .stmt b{color:var(--text)}
-  details{margin-top:10px}
-  summary{cursor:pointer;color:var(--acc);font-size:13px}
-  details p{color:var(--dim);font-size:13px;margin-top:6px}
-  .rule{display:flex;flex-direction:column;gap:2px;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13px}
-  .rule:last-child{border:none}
-  .rule code{font-family:var(--mono);color:#a8b4ff;font-size:12.5px}
-  .rule .rn{color:var(--ok);font-family:var(--mono)}
-  .rule .side{color:var(--warn);font-size:11.5px}
-  .toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-  button.btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:9px 16px;border-radius:8px;cursor:pointer;font-size:14px}
-  button.btn:hover{border-color:var(--acc)}
-  button.run{background:var(--acc);border-color:var(--acc);font-weight:700;color:#fff}
-  .edwrap{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;height:420px}
-  .gutter{font-family:var(--mono);font-size:13.5px;line-height:1.5;color:#4a5068;background:var(--panel2);padding:12px 8px;text-align:right;user-select:none;overflow:hidden;min-width:42px;white-space:pre}
-  textarea{flex:1;background:transparent;border:none;outline:none;resize:none;color:#dfe4ff;font-family:var(--mono);font-size:13.5px;line-height:1.5;padding:12px;white-space:pre;overflow:auto}
-  .results{margin-top:14px}
-  .banner{padding:12px 16px;border-radius:10px;font-weight:700;margin-bottom:10px;border:1px solid}
-  .banner.ok{background:rgba(62,207,142,.1);border-color:var(--ok);color:var(--ok)}
-  .banner.num{background:rgba(245,196,81,.1);border-color:var(--warn);color:var(--warn)}
-  .banner.bad{background:rgba(255,107,107,.1);border-color:var(--err);color:var(--err)}
-  .banner.idle{background:var(--panel);border-color:var(--border);color:var(--dim);font-weight:400}
-  .row{display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13.5px;align-items:flex-start}
-  .row .ic{flex-shrink:0}
-  .row .nm{font-family:var(--mono);color:#a8b4ff;flex-shrink:0}
-  .row .ln{color:#4a5068;font-size:11.5px;flex-shrink:0}
-  .row.ok .ic{color:var(--ok)} .row.bad .ic{color:var(--err)} .row.info .ic{color:var(--dim)}
-  .row .msg{color:#c7cbdb}
-  .row.bad .msg{color:#ffb3b3}
-  pre.ce{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0 4px;font-family:var(--mono);font-size:12px;color:#ffd9a8;overflow-x:auto}
-  .legend{color:var(--dim);font-size:12px;margin-top:10px}
-  footer{padding:10px 20px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;text-align:center}
-  @media(max-width:920px){
-    main{grid-template-columns:1fr;padding:12px}
-    .edwrap{height:340px}
-    .tabs{margin-left:0}
-  }
+:root{
+  --bg:#0a0d1c; --bg2:#0e1330; --surface:#131a38; --surface2:#1a2350; --overlay:#202b60;
+  --line:#2a3568; --line2:#3a4a8f;
+  --ink:#eef1ff; --dim:#93a0d8; --chalk:#f4ecd9;
+  --dom:#4f5dff; --acc:#39d0ff; --acc2:#7cff6b; --mag:#ff5ca8; --warn:#ffb454; --err:#ff4d6d; --ok:#3ecf8e;
+  --efs:13px; --lh:21px; --pad:12px; --rad:14px;
+  --mono:'Cascadia Code','JetBrains Mono','Fira Code',Consolas,monospace;
+  --math:'Cambria Math','STIX Two Math',Georgia,'Times New Roman',serif;
+  --sans:system-ui,'Segoe UI',Roboto,sans-serif;
+}
+body[data-theme="chloro"]{--bg:#06130e;--bg2:#0a1f16;--surface:#0e2a1e;--surface2:#143826;--overlay:#1b4a32;--line:#245c3d;--line2:#337a52;--ink:#eafff2;--dim:#8fc7a6;--dom:#19c37d;--acc:#7cff6b;--acc2:#39d0ff;--mag:#ffd166;--chalk:#f2f7e6}
+body[data-theme="magma"]{--bg:#150809;--bg2:#220d10;--surface:#2b1114;--surface2:#3a171b;--overlay:#4a1e22;--line:#5c2a2e;--line2:#7c3a3e;--ink:#fff0ea;--dim:#d8a093;--dom:#ff5c39;--acc:#ffb454;--acc2:#ff5ca8;--mag:#4dd8ff;--chalk:#f7ecd9}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans);min-height:100vh;overflow-x:hidden}
+body[data-density="compact"]{--pad:8px;--rad:10px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--dom),var(--acc));border-radius:8px;border:2px solid var(--bg2)}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--acc),var(--acc2))}
+*{scrollbar-width:thin;scrollbar-color:var(--dom) var(--bg2)}
+.bg{position:fixed;inset:0;z-index:-2;background:
+  radial-gradient(52rem 34rem at 12% -6%,color-mix(in srgb,var(--dom) 34%,transparent),transparent 62%),
+  radial-gradient(46rem 30rem at 88% 4%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%),
+  radial-gradient(60rem 40rem at 55% 108%,color-mix(in srgb,var(--mag) 16%,transparent),transparent 64%),
+  linear-gradient(168deg,var(--bg) 0%,var(--bg2) 58%,var(--bg) 100%)}
+.bg::after{content:"";position:absolute;inset:-40%;background:conic-gradient(from 0deg at 50% 50%,transparent 0 70%,color-mix(in srgb,var(--acc) 7%,transparent) 78%,transparent 86%);animation:spin 46s linear infinite}
+.grain{position:fixed;inset:0;z-index:-1;opacity:.05;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--acc) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(2%, -3%,0)}}
+body[data-motion="off"] *,body[data-motion="off"] *::before,body[data-motion="off"] *::after{animation:none!important;transition:none!important}
+header.top{position:fixed;top:0;left:0;right:0;height:60px;z-index:50;display:flex;align-items:center;gap:14px;padding:0 18px;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.logo{font-weight:800;font-size:19px;letter-spacing:.3px;white-space:nowrap}
+.logo b{background:linear-gradient(92deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.logo .qed{color:var(--mag)}
+nav{display:flex;gap:4px;margin-left:8px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.navbtn{position:relative;background:none;border:none;color:var(--dim);font:600 13.5px var(--sans);padding:8px 12px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:color .18s,background .18s}
+.navbtn:hover{color:var(--ink);background:var(--surface)}
+.navbtn.on{color:var(--ink)}
+.navbtn.on::after{content:"";position:absolute;left:12px;right:12px;bottom:2px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--acc),var(--acc2));box-shadow:0 0 10px var(--acc)}
+.top .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.iconbtn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:16px;display:grid;place-items:center;transition:border-color .18s,transform .12s}
+.iconbtn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.iconbtn[aria-pressed="false"]{color:var(--dim)}
+.xpchip{display:flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:linear-gradient(92deg,color-mix(in srgb,var(--dom) 26%,var(--surface)),var(--surface));font:700 13px var(--mono);color:var(--acc2)}
+main{padding:76px 18px 40px;max-width:1680px;margin:0 auto}
+.view{display:none}
+.view.on{display:block;animation:rise .45s cubic-bezier(.2,.7,.2,1)}
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:10px 4px 18px;scroll-margin-top:76px}
+.hero h1{font:800 clamp(26px,3.4vw,42px)/1.08 var(--sans);letter-spacing:-.5px}
+.hero h1 em{font-style:normal;font-family:var(--math);background:linear-gradient(94deg,var(--acc) 10%,var(--acc2) 55%,var(--mag) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--dim);max-width:56ch;margin-top:8px;font-size:14px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{padding:10px 16px;border-radius:var(--rad);border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 82%,transparent);animation:rise .5s both}
+.stat:nth-child(2){animation-delay:.08s}.stat:nth-child(3){animation-delay:.16s}
+.stat b{display:block;font:800 20px var(--mono);color:var(--acc)}
+.stat span{font-size:11.5px;color:var(--dim);letter-spacing:.6px;text-transform:uppercase}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr) 350px;gap:14px;align-items:start}
+.card{background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line);border-radius:var(--rad);padding:var(--pad);animation:rise .5s both}
+.card h2{font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:8px;height:8px;border-radius:3px;background:linear-gradient(135deg,var(--acc),var(--mag));box-shadow:0 0 8px var(--acc)}
+.listtools{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.search{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.search input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:13px var(--sans)}
+.search input::placeholder{color:var(--dim)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--bg2);color:var(--dim);border-radius:999px;padding:4px 10px;font:600 11.5px var(--sans);cursor:pointer;transition:all .15s}
+.chip.on{color:var(--bg);background:linear-gradient(92deg,var(--acc),var(--acc2));border-color:transparent}
+select,input[type="search"]{background:var(--bg2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:6px 8px;font:12.5px var(--sans);outline:none}
+select:focus{border-color:var(--acc)}
+.tasks{display:flex;flex-direction:column;gap:8px;max-height:560px;overflow:auto;padding-right:4px}
+.task{ text-align:left;border:1px solid var(--line);background:linear-gradient(150deg,var(--surface2),var(--surface));border-radius:12px;padding:11px 12px;cursor:pointer;color:var(--ink);transition:transform .15s,border-color .15s,box-shadow .15s;position:relative;overflow:hidden}
+.task:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 8px 22px -12px var(--dom)}
+.task.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 10px 26px -14px var(--acc)}
+.task.on::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,var(--acc),var(--acc2))}
+.task .t{font:700 13.5px var(--sans);display:flex;gap:8px;align-items:center}
+.task .st{margin-left:auto;font-size:12px}
+.task .st.done{color:var(--ok)}.task .st.draft{color:var(--warn)}.task .st.new{color:var(--dim)}
+.task .m{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:11.5px;color:var(--dim)}
+.task .stars{color:var(--warn);letter-spacing:1.5px}
+.task .xp{margin-left:auto;font:700 11px var(--mono);color:var(--acc2)}
+.tag{border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:10.5px;color:var(--dim)}
+.work{display:flex;flex-direction:column;gap:12px;min-width:0}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:9px 15px;border-radius:10px;cursor:pointer;font:600 13.5px var(--sans);transition:transform .12s,border-color .15s,box-shadow .15s}
+.btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.run{background:linear-gradient(94deg,var(--dom),var(--acc));border-color:transparent;color:#fff;font-weight:800;box-shadow:0 8px 24px -12px var(--acc)}
+.btn.run:hover{box-shadow:0 10px 30px -10px var(--acc)}
+.viewtools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:9px 12px;border:1px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--bg2) 60%,transparent)}
+.vt{display:flex;align-items:center;gap:6px;font:600 11.5px var(--sans);color:var(--dim)}
+.vt output{font:700 12px var(--mono);color:var(--acc);min-width:2ch;text-align:center}
+.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.step button{width:24px;height:24px;border:none;background:var(--surface2);color:var(--ink);cursor:pointer;font-size:13px}
+.step button:hover{background:var(--overlay);color:var(--acc)}
+.switch{position:relative;width:34px;height:19px;border-radius:999px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;transition:background .18s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--dim);transition:transform .18s,background .18s}
+.switch[aria-pressed="true"]{background:color-mix(in srgb,var(--dom) 55%,var(--bg2));border-color:var(--acc)}
+.switch[aria-pressed="true"]::after{transform:translateX(15px);background:var(--acc2)}
+.edstack{position:relative;border:1px solid var(--line);border-radius:var(--rad);overflow:hidden;background:var(--bg2);height:clamp(320px,46vh,520px);display:flex}
+.gutter{font:var(--efs)/var(--lh) var(--mono);color:var(--line2);background:color-mix(in srgb,var(--surface) 70%,var(--bg2));padding:var(--pad) 8px;text-align:right;user-select:none;overflow:hidden;min-width:44px;white-space:pre}
+.edbody{position:relative;flex:1;overflow:hidden}
+.band{position:absolute;left:0;right:0;height:var(--lh);background:color-mix(in srgb,var(--dom) 16%,transparent);border-left:2px solid var(--acc);pointer-events:none;transition:top .08s}
+body[data-linehl="off"] .band{display:none}
+#hl,#ed{position:absolute;inset:0;font:var(--efs)/var(--lh) var(--mono);padding:var(--pad);white-space:pre;tab-size:2;overflow:auto;border:none;margin:0}
+#hl{pointer-events:none;color:var(--ink);overflow:hidden}
+#ed{background:transparent;color:transparent;caret-color:var(--acc2);outline:none;resize:none}
+#ed::selection{background:color-mix(in srgb,var(--acc) 30%,transparent)}
+body[data-hl="off"] #hl{visibility:hidden}
+body[data-hl="off"] #ed{color:var(--ink)}
+.tok-k{color:var(--mag);font-weight:700}
+.tok-l{color:var(--acc2)}
+.tok-o{color:var(--acc)}
+.tok-c{color:var(--dim);font-style:italic}
+.tok-t{color:var(--warn)}
+.iv{display:flex;flex-direction:column;height:clamp(320px,46vh,520px)}
+.iv .head{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--line);font:700 11.5px var(--mono);color:var(--dim);letter-spacing:.6px}
+.iv .head .mode{color:var(--mag)}
+.iv .body{flex:1;overflow:auto;padding:12px;font:12.5px/1.6 var(--mono)}
+.iv .body.pulse{animation:pulse .5s}
+.hyp{color:var(--dim)}
+.goal{background:var(--surface2);border-left:3px solid var(--acc);border-radius:6px;padding:7px 9px;margin:8px 0;color:var(--ink);white-space:pre-wrap;font-family:var(--math);font-size:14px}
+.goal.other{border-left-color:var(--line2);color:var(--dim)}
+.goal.none{border-left-color:var(--ok);color:var(--ok)}
+.iv .err{color:var(--err);margin-top:8px;white-space:pre-wrap}
+.iv .foot{padding:7px 12px;border-top:1px solid var(--line);font:11px var(--mono);color:var(--dim)}
+.banner{padding:11px 15px;border-radius:12px;font-weight:800;border:1px solid;font-size:14px;display:flex;gap:10px;align-items:center;animation:rise .35s}
+.banner.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);border-color:var(--ok);color:var(--ok)}
+.banner.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);border-color:var(--warn);color:var(--warn)}
+.banner.bad{background:color-mix(in srgb,var(--err) 12%,transparent);border-color:var(--err);color:var(--err)}
+.banner.idle{background:var(--surface);border-color:var(--line);color:var(--dim);font-weight:500}
+.rows{margin-top:8px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:flex;gap:10px;padding:7px 12px;border-bottom:1px solid var(--line);font:12.5px var(--mono);cursor:pointer;background:var(--surface);transition:background .12s}
+.row:last-child{border-bottom:none}
+.row:hover{background:var(--surface2)}
+.row .ln{color:var(--line2);min-width:56px}
+.row.ok .ic{color:var(--ok)}.row.bad .ic{color:var(--err)}.row.warn .ic{color:var(--warn)}
+.row .msg{color:var(--dim)}
+.row.bad .msg{color:var(--err)}
+.side{display:flex;flex-direction:column;gap:12px}
+.prog .bar{height:9px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);overflow:hidden;margin:8px 0}
+.prog .fill{height:100%;background:linear-gradient(90deg,var(--dom),var(--acc),var(--acc2));transition:width .6s cubic-bezier(.2,.7,.2,1);box-shadow:0 0 12px var(--acc)}
+.prog .rank{font:800 15px var(--sans);color:var(--acc2)}
+.prog .sub{font-size:12px;color:var(--dim)}
+.mini{display:flex;flex-direction:column;gap:6px}
+.mini .r{display:flex;gap:8px;align-items:center;font:12.5px var(--mono);color:var(--dim);padding:5px 8px;border-radius:8px;background:var(--bg2)}
+.mini .r.you{color:var(--ink);border:1px solid var(--acc);background:color-mix(in srgb,var(--dom) 22%,var(--bg2))}
+.mini .r b{margin-left:auto;color:var(--acc2)}
+.rule{padding:8px 0;border-bottom:1px dashed var(--line)}
+.rule:last-child{border:none}
+.rule .rn{font:700 12.5px var(--mono);color:var(--acc2)}
+.rule code{display:block;font:12.5px var(--math);color:var(--acc);margin-top:3px}
+.rule .side{font-size:11px;color:var(--warn);margin-top:2px}
+.legend{color:var(--dim);font-size:11.5px;margin-top:10px;line-height:1.6}
+.legend code{color:var(--acc);font-family:var(--mono)}
+table.lb{width:100%;border-collapse:collapse;font:13px var(--mono)}
+table.lb th{ text-align:left;color:var(--dim);font:700 11px var(--sans);letter-spacing:.8px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--line)}
+table.lb td{padding:9px 10px;border-bottom:1px solid var(--line)}
+table.lb tr.you td{background:color-mix(in srgb,var(--dom) 20%,transparent);color:var(--ink)}
+table.lb tr.you td:first-child{border-left:3px solid var(--acc)}
+table.lb .medal{font-size:15px}
+.lbtools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.libcard{border:1px solid var(--line);border-radius:var(--rad);background:linear-gradient(160deg,var(--surface2),var(--surface));padding:14px;transition:transform .15s,border-color .15s}
+.libcard:hover{transform:translateY(-3px);border-color:var(--acc)}
+.libcard .rn{font:800 14px var(--mono);color:var(--acc2)}
+.libcard code{display:block;font:15px var(--math);color:var(--acc);margin:8px 0}
+.libcard p{font-size:12.5px;color:var(--dim)}
+.libcard .use{margin-top:8px;font-size:11px;color:var(--mag)}
+.cheat{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:14px}
+.cheat div{border:1px dashed var(--line);border-radius:10px;padding:10px;font:12px var(--mono);color:var(--dim)}
+.cheat b{color:var(--mag);display:block;margin-bottom:4px}
+#liveFrame{width:100%;height:74vh;border:1px solid var(--line);border-radius:var(--rad);background:#fff}
+.note{color:var(--dim);font-size:13px;margin:10px 0;max-width:90ch}
+.note a{color:var(--acc)}
+.toasts{position:fixed;right:16px;bottom:16px;z-index:80;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;gap:12px;align-items:center;background:var(--overlay);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;font:600 13px var(--sans);box-shadow:0 14px 40px -18px #000;animation:rise .3s}
+.toast button{border:none;background:linear-gradient(92deg,var(--acc),var(--acc2));color:var(--bg);font:800 12px var(--sans);border-radius:8px;padding:6px 10px;cursor:pointer}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+footer{padding:14px 18px;border-top:1px solid var(--line);color:var(--dim);font-size:11.5px;text-align:center}
+@media(max-width:1280px){.layout{grid-template-columns:280px minmax(0,1fr)}.side{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.side .card{flex:1 1 260px}}
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .tasks{flex-direction:row;overflow-x:auto;max-height:none;padding-bottom:6px}
+  .task{min-width:230px}
+  .hero h1{font-size:26px}
+  main{padding:70px 12px 30px}
+  .edstack,.iv{height:340px}
+}
 </style>
 </head>
-<body>
-<header>
-  <div>
-    <div class="logo">∎ Math<span>Proof</span></div>
-    <div class="sub">прототип v0.1 · формальная проверка доказательств · линейная алгебра</div>
+<body data-theme="indigo" data-density="cozy" data-motion="on" data-linehl="on" data-hl="on">
+<div class="bg"></div><div class="grain"></div>
+<canvas id="fx"></canvas>
+<header class="top">
+  <div class="logo"><span class="qed">∎</span> Math<b>Proof</b> · Lean</div>
+  <nav id="nav">
+    <button class="navbtn on" data-view="tasks">Задачи</button>
+    <button class="navbtn" data-view="rating">Рейтинг</button>
+    <button class="navbtn" data-view="library">Библиотека</button>
+    <button class="navbtn" data-view="live">Lean Live</button>
+  </nav>
+  <div class="right">
+    <div class="xpchip" id="xpChip">✦ 0 XP</div>
+    <button class="iconbtn" id="sndBtn" aria-pressed="true" title="Звук вкл/выкл">🔊</button>
   </div>
-  <div class="tabs" id="tabs"></div>
 </header>
 <main>
-  <aside>
-    <div class="card">
-      <h2 id="tTitle"></h2>
-      <div class="diff" id="tDiff"></div>
-      <div class="stmt" id="tStmt"></div>
-      <details><summary>Подсказка</summary><p id="tHint"></p></details>
+  <!-- ============ ЗАДАЧИ ============ -->
+  <section class="view on" id="view-tasks">
+    <div class="hero" id="hero">
+      <div>
+        <h1>Доказывай. <em>Как в Lean.</em></h1>
+        <p>Тактики, tactic state на строке курсора и честная проверка каждого шага. Начни с инволюции транспонирования — или сразу прыгни в обратную к произведению.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="stLevels">5</b><span>уровней</span></div>
+        <div class="stat"><b id="stRules">10</b><span>лемм</span></div>
+        <div class="stat"><b id="stSolved">0/5</b><span>решено</span></div>
+      </div>
     </div>
-    <div class="card">
-      <h2>Доступные правила</h2>
-      <div id="tRules"></div>
-      <div class="legend">Обоснование шага: <code>by &lt;правило&gt;</code>, <code>by &lt;правило&gt; &lt;шаг&gt;...</code> (для правил с предпосылками) или <code>by &lt;шаг&gt; &lt;шаг&gt;...</code>. <code>by algebra</code> — численная проверка (понижает уровень доверия).</div>
-    </div>
-  </aside>
-  <section>
-    <div class="toolbar">
-      <button class="btn run" id="btnRun">▶ Проверить (Ctrl+Enter)</button>
-      <button class="btn" id="btnSol">Эталонное решение</button>
-      <button class="btn" id="btnReset">Сбросить</button>
-    </div>
-    <div class="edwrap">
-      <div class="gutter" id="gutter">1</div>
-      <textarea id="ed" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
-    </div>
-    <div class="results" id="res">
-      <div class="banner idle">Напишите доказательство и нажмите «Проверить». Черновик сохраняется локально.</div>
+    <div class="layout">
+      <aside class="card">
+        <h2>Уровни</h2>
+        <div class="listtools">
+          <div class="search">🔍<input id="q" type="search" placeholder="Поиск: транспонирование, обратная…"></div>
+          <div class="chips" id="diffChips">
+            <button class="chip on" data-d="0">все</button>
+            <button class="chip" data-d="1">★</button>
+            <button class="chip" data-d="2">★★</button>
+            <button class="chip" data-d="3">★★★</button>
+          </div>
+          <select id="sortSel">
+            <option value="diff">сортировать: по сложности</option>
+            <option value="xp">по XP</option>
+            <option value="status">по статусу</option>
+            <option value="name">по названию</option>
+          </select>
+        </div>
+        <div class="tasks" id="taskList"></div>
+      </aside>
+      <div class="work">
+        <div class="toolbar">
+          <button class="btn run" id="btnRun">▶ Проверить&nbsp;<span style="opacity:.7;font-weight:600">Ctrl+↵</span></button>
+          <button class="btn" id="btnSol">Эталон</button>
+          <button class="btn" id="btnReset">Сброс</button>
+        </div>
+        <div class="viewtools">
+          <span class="vt">шрифт <span class="step"><button id="fsD">−</button><output id="fsOut">13</output><button id="fsU">+</button></span></span>
+          <span class="vt">тема <select id="themeSel"><option value="indigo">Индиго</option><option value="chloro">Хлорофилл</option><option value="magma">Магма</option></select></span>
+          <span class="vt">плотность <button class="switch" id="densSw" aria-pressed="false"></button></span>
+          <span class="vt">движение <button class="switch" id="motSw" aria-pressed="true"></button></span>
+          <span class="vt">строка <button class="switch" id="lineSw" aria-pressed="true"></button></span>
+          <span class="vt">подсветка <button class="switch" id="hlSw" aria-pressed="true"></button></span>
+          <span class="vt">автопроверка <button class="switch" id="autoSw" aria-pressed="true"></button></span>
+          <button class="btn" id="viewReset" style="padding:5px 10px;font-size:11.5px">сбросить вид</button>
+        </div>
+        <div class="edstack">
+          <div class="gutter" id="gutter">1</div>
+          <div class="edbody">
+            <div class="band" id="band"></div>
+            <pre id="hl" aria-hidden="true"></pre>
+            <textarea id="ed" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+        </div>
+        <div id="res"><div class="banner idle">Напиши тактики под <code>:= by</code> и нажми «Проверить». Клик по строке редактора показывает tactic state на этой строке.</div></div>
+      </div>
+      <div class="side">
+        <div class="card iv">
+          <div class="head"><span>TACTIC STATE</span><span class="mode" id="ivMode">demo kernel</span></div>
+          <div class="body" id="ivBody"></div>
+          <div class="foot" id="ivFoot">курсор: строка 1</div>
+        </div>
+        <div class="card prog">
+          <h2>Прогресс</h2>
+          <div class="rank" id="rankName">Новичок</div>
+          <div class="bar"><div class="fill" id="xpFill" style="width:0%"></div></div>
+          <div class="sub" id="xpSub">0 / 100 XP до ранга «Подмастерье»</div>
+        </div>
+        <div class="card">
+          <h2>Топ недели</h2>
+          <div class="mini" id="miniLb"></div>
+        </div>
+        <div class="card">
+          <h2>Леммы уровня</h2>
+          <div id="tRules"></div>
+          <div class="legend">Тактики: <code>let x := e</code> · <code>rw [h1, ← h2]</code> · <code>apply h</code> · <code>symm</code> · <code>rfl</code> · <code>sorry</code>.<br>Демо-кернел исполняет эквациональную логику; вкладка «Lean Live» — настоящий WASM-Lean.</div>
+        </div>
+      </div>
     </div>
   </section>
+  <!-- ============ РЕЙТИНГ ============ -->
+  <section class="view" id="view-rating">
+    <div class="hero"><div><h1>Рейтинг <em>доказателей</em></h1><p>XP начисляется за принятые доказательства. Чем сложнее уровень — тем выше награда. Строка «ты» обновляется сразу после проверки.</p></div></div>
+    <div class="card">
+      <div class="lbtools">
+        <div class="search" style="flex:1;min-width:220px">🔍<input id="lbQ" type="search" placeholder="Найти доказателя…"></div>
+        <select id="lbSort"><option value="xp">по XP</option><option value="name">по имени</option><option value="solved">по решённым</option></select>
+      </div>
+      <table class="lb"><thead><tr><th>#</th><th>доказатель</th><th>ранг</th><th>решено</th><th style="text-align:right">XP</th></tr></thead><tbody id="lbBody"></tbody></table>
+    </div>
+  </section>
+  <!-- ============ БИБЛИОТЕКА ============ -->
+  <section class="view" id="view-library">
+    <div class="hero"><div><h1>Библиотека <em>лемм</em></h1><p>Всё, на что можно ссылаться в тактиках. Схемы записаны с метапеременными X, Y, Z; предусловия проверяются кернелом.</p></div></div>
+    <div class="libgrid" id="libGrid"></div>
+    <div class="card" style="margin-top:14px"><h2>Шпаргалка тактик</h2><div class="cheat" id="cheat"></div></div>
+  </section>
+  <!-- ============ LEAN LIVE ============ -->
+  <section class="view" id="view-live">
+    <div class="hero"><div><h1>Настоящий <em>Lean 4</em> в браузере</h1><p>WASM-сборка Lean проверяет доказательства локально, без сервера (проект cauli/lean4-wasm-in-browser, Apache-2.0). В боевой версии этот фрейм заменяется собственным worker’ом, затем серверным Lean.</p></div></div>
+    <div class="note">Если фрейм пустой — открой <a href="https://lean.cau.li/" target="_blank" rel="noopener">lean.cau.li</a> в новой вкладке. Требуется интернет.</div>
+    <div id="liveHolder"></div>
+  </section>
 </main>
-<footer>Работает полностью офлайн · проверка: паттерн-матчинг правил + конгруэнтное замыкание + поиск контрпримеров в случайных моделях</footer>
-
+<div class="toasts" id="toasts"></div>
+<footer>DEMO: тактики исполняет встроенный кернел (паттерн-матчинг + эквациональная логика), не ядро Lean. Настоящий Lean — вкладка «Lean Live». Прогресс хранится локально.</footer>
 <script>
 'use strict';
-/* ============================================================
-   1. МАТРИЧНАЯ АРИФМЕТИКА (численные модели теории)
-   ============================================================ */
-const eye=n=>Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
-const mT=A=>A[0].map((_,j)=>A.map(r=>r[j]));
-const mAdd=(A,B,s=1)=>A.map((r,i)=>r.map((v,j)=>v+s*B[i][j]));
-const mMul=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
-function mInv(M){
-  const n=M.length, A=M.map((r,i)=>[...r,...Array.from({length:n},(_,j)=>i===j?1:0)]);
-  for(let c=0;c<n;c++){
-    let p=c; for(let r=c+1;r<n;r++) if(Math.abs(A[r][c])>Math.abs(A[p][c])) p=r;
-    if(Math.abs(A[p][c])<1e-9) return null;
-    [A[c],A[p]]=[A[p],A[c]];
-    const d=A[c][c]; for(let j=0;j<2*n;j++) A[c][j]/=d;
-    for(let r=0;r<n;r++){ if(r===c) continue; const f=A[r][c]; for(let j=0;j<2*n;j++) A[r][j]-=f*A[c][j]; }
-  }
-  return A.map(r=>r.slice(n));
-}
-const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
-const rMat=(r,c)=>Array.from({length:r},()=>Array.from({length:c},()=>rnd(-3,3)));
-function rInvMat(n){ for(let t=0;t<80;t++){ const M=rMat(n,n); if(mInv(M)) return M; } return eye(n); }
-function mEq(A,B){
-  if(!A||!B||A.length!==B.length||A[0].length!==B[0].length) return false;
-  for(let i=0;i<A.length;i++) for(let j=0;j<A[0].length;j++){
-    const d=Math.abs(A[i][j]-B[i][j]);
-    if(d>1e-6*Math.max(1,Math.abs(A[i][j]),Math.abs(B[i][j]))) return false;
-  }
-  return true;
-}
-const fM=A=>A.map(r=>r.map(v=>(Math.abs(v)<1e-9?0:v).toFixed(2).padStart(7)).join('')).join('\n');
-
-/* ============================================================
-   2. ЛЕКСЕР
-   ============================================================ */
-class PErr extends Error{ constructor(m,line){ super(m); this.line=line; } }
-const KW=new Set(['theory','given','goal','proof','let','step','by','assume','qed','invertible','Matrix','Nat','algebra']);
+/* ================= ядро: термы ================= */
+class PErr extends Error{constructor(m,l){super(m);this.line=l}}
 function lex(src){
-  const T=[]; let i=0, line=1;
-  while(i<src.length){
-    const c=src[i];
-    if(c==='\n'){line++;i++;continue;}
-    if(c===' '||c==='\t'||c==='\r'){i++;continue;}
-    if((c==='-'&&src[i+1]==='-')||(c==='/'&&src[i+1]==='/')){ while(i<src.length&&src[i]!=='\n')i++; continue; }
-    if(/[A-Za-z_?]/.test(c)){ let j=i+1; while(j<src.length&&/[A-Za-z0-9_]/.test(src[j]))j++; const w=src.slice(i,j); T.push({t:KW.has(w)?w:'id',v:w,line}); i=j; continue; }
-    if(/[0-9]/.test(c)){ let j=i+1; while(j<src.length&&/[0-9]/.test(src[j]))j++; T.push({t:'int',v:+src.slice(i,j),line}); i=j; continue; }
-    if(c==='='&&src[i+1]==='='){T.push({t:'==',line});i+=2;continue;}
-    if(c==='^'){
-      if(src[i+1]==='T'){T.push({t:'^T',line});i+=2;continue;}
-      if(src[i+1]==='-'&&src[i+2]==='1'){T.push({t:'^-1',line});i+=3;continue;}
-      throw new PErr("После '^' ожидается 'T' или '-1'",line);
-    }
-    if('():,=+*-'.includes(c)){T.push({t:c,line});i++;continue;}
-    throw new PErr(`Неизвестный символ '${c}'`,line);
+  const T=[];let i=0,line=1;
+  while(i<src.length){const c=src[i];
+    if(c==='\n'){line++;i++;continue}
+    if(c===' '||c==='\t'||c==='\r'){i++;continue}
+    if(c==='-'&&src[i+1]==='-'){while(i<src.length&&src[i]!=='\n')i++;continue}
+    if(/[A-Za-z_?]/.test(c)){let j=i+1;while(j<src.length&&/[A-Za-z0-9_']/.test(src[j]))j++;T.push({t:'id',v:src.slice(i,j),line});i=j;continue}
+    if(c==='⁻'&&src[i+1]==='¹'){T.push({t:'inv',line});i+=2;continue}
+    if(c==='ᵀ'){T.push({t:'tr',line});i++;continue}
+    if(c==='←'){T.push({t:'rev',line});i++;continue}
+    if(c==='<'&&src[i+1]==='-'){T.push({t:'rev',line});i+=2;continue}
+    if(c==='^'&&src[i+1]==='T'){T.push({t:'tr',line});i+=2;continue}
+    if(c==='^'&&src[i+1]==='-'&&src[i+2]==='1'){T.push({t:'inv',line});i+=3;continue}
+    if(c===':'&&src[i+1]==='='){T.push({t:':=',line});i+=2;continue}
+    if('()[]=*,:'.includes(c)){T.push({t:c,line});i++;continue}
+    throw new PErr('Неизвестный символ «'+c+'»',line);
   }
-  T.push({t:'eof',line}); return T;
+  T.push({t:'eof',line});return T;
 }
-
-/* ============================================================
-   3. ПАРСЕР (рекурсивный спуск) -> AST
-   ============================================================ */
-function makeParser(src){
-  const T=lex(src); let p=0;
-  const peek=()=>T[p], next=()=>T[p++];
-  const acc=t=>peek().t===t?(next(),true):false;
-  const exp=t=>{ const k=next(); if(k.t!==t) throw new PErr(`Ожидалось '${t}', получено '${k.v??k.t}'`,k.line); return k; };
-  const ident=()=>exp('id').v;
-
-  function atom(){
-    if(acc('(')){ const e=expr(); exp(')'); return e; }
-    const k=next();
-    if(k.t!=='id') throw new PErr(`Ожидалось имя или '(', получено '${k.v??k.t}'`,k.line);
-    if(k.v==='I') return {op:'const',name:'I'};
-    return {op:'var',name:k.v,meta:k.v[0]==='?'};
-  }
-  function post(){ let a=atom(); for(;;){ if(acc('^T')) a={op:'tr',args:[a]}; else if(acc('^-1')) a={op:'inv',args:[a]}; else break; } return a; }
-  function term(){ let a=post(); while(acc('*')) a={op:'mul',args:[a,post()]}; return a; }
-  function expr(){ let a=term(); for(;;){ if(acc('+')) a={op:'add',args:[a,term()]}; else if(acc('-')) a={op:'sub',args:[a,term()]}; else break; } return a; }
-  function eq(){ const l=expr(); exp('=='); return {l,r:expr()}; }
-
-  function program(){
-    exp('theory'); const theory=ident(); exp('given');
-    const dims=[], mats=[], assumes=[];
-    while(peek().t==='id'||peek().t==='assume'){
-      if(acc('assume')){ exp('invertible'); exp('('); assumes.push(ident()); exp(')'); continue; }
-      const names=[ident()]; while(acc(',')) names.push(ident());
-      exp(':');
-      if(acc('Nat')){ names.forEach(n=>dims.push(n)); }
-      else{ exp('Matrix'); exp('('); const r=dim(); exp(','); const c=dim(); exp(')'); names.forEach(n=>mats.push({name:n,r,c})); }
-    }
-    exp('goal'); const goal=eq();
-    exp('proof'); const steps=[];
-    while(peek().t==='let'||peek().t==='step'){
-      const k=next();
-      if(k.t==='let'){ const name=ident(); exp('='); steps.push({kind:'let',name,expr:expr(),line:k.line}); }
-      else{
-        const name=ident(); exp(':'); const e=eq(); exp('by');
-        let mode, refs=[];
-        if(acc('algebra')) mode='algebra';
-        else{ mode='refs'; while(peek().t==='id') refs.push(next().v); if(!refs.length) throw new PErr('После by нужно обоснование',k.line); }
-        steps.push({kind:'step',name,lhs:e.l,rhs:e.r,mode,refs,line:k.line});
-      }
-    }
-    exp('qed'); exp('eof');
-    return {theory,dims,mats,assumes,goal,steps};
-  }
-  function dim(){ const k=next(); if(k.t==='int'||k.t==='id') return k.v; throw new PErr('Ожидалась размерность',k.line); }
-  return {program,eqOnly:()=>{const e=eq();exp('eof');return e;}};
+function termParser(src){
+  const T=lex(src);let p=0;
+  const peek=()=>T[p],acc=t=>peek().t===t?(p++,true):false;
+  const exp=t=>{const k=T[p++];if(k.t!==t)throw new PErr('Ожидалось «'+t+'», получено «'+(k.v??k.t)+'»',k.line);return k};
+  function atom(){if(acc('(')){const e=expr();exp(')');return e}
+    const k=exp('id');return k.v==='I'?{op:'const',name:'I'}:{op:'var',name:k.v,meta:k.v[0]==='?'}}
+  function post(){let a=atom();for(;;){if(acc('inv'))a={op:'inv',args:[a]};else if(acc('tr'))a={op:'tr',args:[a]};else break}return a}
+  function expr(){let a=post();while(acc('*'))a={op:'mul',args:[a,post()]};return a}
+  return {expr,eq:()=>{const l=expr();exp('=');return{l,r:expr()}}};
 }
-
-/* ============================================================
-   4. КЛЮЧИ ТЕРМОВ + КОНГРУЭНТНОЕ ЗАМЫКАНИЕ (ядро проверки)
-   ============================================================ */
-function tkey(t){
-  if(t.op==='var') return 'v:'+t.name;
-  if(t.op==='const') return 'C:'+t.name;
-  return t.op+'('+t.args.map(tkey).join(',')+')';
-}
-function closure(eqs){ // eqs: [{l,r}] — доказанные равенства
-  const nodes=new Map(), parent=new Map();
-  function add(t){ const k=tkey(t); if(!nodes.has(k)){ nodes.set(k,{op:t.op,args:(t.args||[]).map(tkey)}); parent.set(k,k); (t.args||[]).forEach(add);} return k; }
-  eqs.forEach(e=>{add(e.l);add(e.r);});
-  function find(k){ while(parent.get(k)!==k){ parent.set(k,parent.get(parent.get(k))); k=parent.get(k);} return k; }
-  function union(a,b){ a=find(a); b=find(b); if(a!==b) parent.set(a,b); }
-  eqs.forEach(e=>union(tkey(e.l),tkey(e.r)));
-  let ch=true;
-  while(ch){ ch=false; const A=[...nodes.entries()];
-    for(let i=0;i<A.length;i++) for(let j=i+1;j<A.length;j++){
-      const [ka,a]=A[i],[kb,b]=A[j];
-      if(a.op===b.op&&a.args.length===b.args.length&&a.args.length>0&&find(ka)!==find(kb)
-         &&a.args.every((x,q)=>find(x)===find(b.args[q]))){ union(ka,kb); ch=true; }
-    }
-  }
-  return {eq:(x,y)=>find(tkey(x))===find(tkey(y))};
-}
-
-/* ============================================================
-   5. БИБЛИОТЕКА ПРАВИЛ (схемы с метапеременными ?X,?Y,?Z)
-   ============================================================ */
-function mkRule(id,schema,premises=[],side=null){
-  const c=makeParser(schema).eqOnly();
-  return {
-    id,
-    display:schema.replace(/\?/g,''),
-    premisesDisplay:premises.map(s=>s.replace(/\?/g,'')),
-    concl:c,
-    premises:premises.map(s=>makeParser(s).eqOnly()),
-    side
-  };
-}
-const RULES={
-  mul_assoc:          mkRule('mul_assoc','(?X * ?Y) * ?Z == ?X * (?Y * ?Z)'),
-  one_mul:            mkRule('one_mul','I * ?X == ?X'),
-  mul_one:            mkRule('mul_one','?X * I == ?X'),
-  mul_inv:            mkRule('mul_inv','?X * ?X^-1 == I',[],'inv'),
-  inv_mul:            mkRule('inv_mul','?X^-1 * ?X == I',[],'inv'),
-  inv_unique:         mkRule('inv_unique','?Y == ?X^-1',['?X * ?Y == I','?Y * ?X == I']),
-  transpose_mul:      mkRule('transpose_mul','(?X * ?Y)^T == ?Y^T * ?X^T'),
-  transpose_transpose:mkRule('transpose_transpose','(?X^T)^T == ?X'),
-  transpose_add:      mkRule('transpose_add','(?X + ?Y)^T == ?X^T + ?Y^T'),
-};
-// Паттерн-матчинг: схема правила против конкретного шага (с раскрытием let-определений)
+const tkey=t=>t.op==='var'?'v:'+t.name:t.op==='const'?'C:I':t.op+'('+t.args.map(tkey).join(',')+')';
+function pp(t){switch(t.op){case 'var':return t.name;case 'const':return 'I';
+  case 'mul':return pw(t.args[0],1)+' * '+pw(t.args[1],1);
+  case 'inv':return pw(t.args[0],2)+'⁻¹';case 'tr':return pw(t.args[0],2)+'ᵀ'}}
+const pw=(t,p)=>{const s=pp(t);return (t.op==='mul'?1:2)<p?'('+s+')':s};
+const peq=g=>pp(g.l)+' = '+pp(g.r);
 function match(p,g,B,lets){
-  if(p.op==='var'&&p.meta){
-    if(B[p.name]) return tkey(B[p.name])===tkey(g);
-    B[p.name]=g; return true;
-  }
-  while(g.op==='var'&&lets[g.name]&&p.op!=='var') g=lets[g.name];
-  if(p.op!==g.op) return false;
-  if(p.op==='var'||p.op==='const') return p.name===g.name;
+  if(p.op==='var'&&p.meta){if(B[p.name])return tkey(B[p.name])===tkey(g);B[p.name]=g;return true}
+  while(g.op==='var'&&lets[g.name]&&p.op!=='var')g=lets[g.name];
+  if(p.op!==g.op)return false;
+  if(p.op==='var'||p.op==='const')return p.name===g.name;
   return p.args.every((a,i)=>match(a,g.args[i],B,lets));
 }
-function subst(p,B){ if(p.op==='var'&&p.meta) return B[p.name]; if(p.args) return {op:p.op,args:p.args.map(a=>subst(a,B))}; return p; }
-function knownInv(k,set){
-  if(set.has(k)) return true;
-  if(k.startsWith('inv(')) return knownInv(k.slice(4,-1),set);
-  return false;
-}
-
-/* ============================================================
-   6. ПРОВЕРКА РАЗМЕРНОСТЕЙ (типизация)
-   ============================================================ */
-function shape(t,env,line){
-  const err=m=>{throw new PErr(m,line);};
-  switch(t.op){
-    case 'const': return {r:null,c:null};
-    case 'var': if(!env[t.name]) err(`'${t.name}' не объявлен в блоке given / let`); return {...env[t.name]};
-    case 'tr': { const s=shape(t.args[0],env,line); return {r:s.c,c:s.r}; }
-    case 'inv': { const s=shape(t.args[0],env,line); if(s.r!=null&&s.c!=null&&s.r!==s.c) err('Обратная матрица существует только у квадратной'); return s; }
-    case 'add': case 'sub': {
-      const a=shape(t.args[0],env,line), b=shape(t.args[1],env,line);
-      if(a.r!=null&&b.r!=null&&a.r!==b.r||a.c!=null&&b.c!=null&&a.c!==b.c) err('Сложение матриц разных размерностей');
-      return {r:a.r??b.r,c:a.c??b.c};
+const subst=(p,B)=>p.op==='var'&&p.meta?B[p.name]:p.args?{op:p.op,args:p.args.map(a=>subst(a,B))}:p;
+const delta=(t,lets)=>t.op==='var'&&lets[t.name]?delta(lets[t.name],lets):t.args?{op:t.op,args:t.args.map(a=>delta(a,lets))}:t;
+/* ================= леммы ================= */
+function mkRule(id,schema,prem,side,desc){const c=termParser(schema).eq();return{id,display:schema.replace(/\?/g,''),concl:c,premises:(prem||[]).map(s=>termParser(s).eq()),side:side||null,desc:desc||''}}
+const RULES={
+  mul_assoc:mkRule('mul_assoc','(?X * ?Y) * ?Z = ?X * (?Y * ?Z)',null,null,'Ассоциативность умножения матриц.'),
+  one_mul:mkRule('one_mul','I * ?X = ?X',null,null,'Единица слева нейтральна.'),
+  mul_one:mkRule('mul_one','?X * I = ?X',null,null,'Единица справа нейтральна.'),
+  mul_inv:mkRule('mul_inv','?X * ?X⁻¹ = I',[],'inv','Матрица на свою обратную даёт I. Требует Invertible X.'),
+  inv_mul:mkRule('inv_mul','?X⁻¹ * ?X = I',[],'inv','Обратная на матрицу даёт I. Требует Invertible X.'),
+  inv_unique:mkRule('inv_unique','?Y = ?X⁻¹',['?X * ?Y = I','?Y * ?X = I'],null,'Единственность обратной: двусторонняя обратная и есть X⁻¹.'),
+  inv_inv:mkRule('inv_inv','?X⁻¹⁻¹ = ?X',[],'inv','Обратная к обратной — исходная матрица.'),
+  transpose_mul:mkRule('transpose_mul','(?X * ?Y)ᵀ = ?Yᵀ * ?Xᵀ',null,null,'Транспонирование произведения меняет порядок.'),
+  transpose_transpose:mkRule('transpose_transpose','(?Xᵀ)ᵀ = ?X',null,null,'Транспонирование инволютивно.'),
+  transpose_inv:mkRule('transpose_inv','?X⁻¹ᵀ = (?Xᵀ)⁻¹',[],'inv','Транспонирование и обращение коммутируют.')
+};
+const knownInv=(k,s)=>s.has(k)||(k.startsWith('inv(')&&knownInv(k.slice(4,-1),s));
+/* ================= исполнение тактик ================= */
+function parseHeader(lines){
+  const st={hyps:[],inv:new Set(),lets:{},goals:null,name:'',goalLine:0};
+  for(let i=0;i<lines.length;i++){
+    const s=lines[i].trim();
+    if(!s||s.startsWith('--')||s.startsWith('import'))continue;
+    let m;
+    if((m=s.match(/^variable\s*(.*)$/))){
+      for(const g of m[1].matchAll(/\(([^)]*)\)/g)){
+        const parts=g[1].split(':');const names=parts[0].trim().split(/\s+/);const type=(parts[1]||'').trim();
+        if(type==='Nat')names.forEach(n=>st.hyps.push(n+' : Nat'));
+        else if(type.startsWith('Matrix')){const d=type.replace(/^Matrix\s*/,'').split(/\s+/);names.forEach(n=>st.hyps.push(n+' : Matrix '+d.join(' ')))}
+        else if(type.startsWith('Invertible')){const x=type.split(/\s+/)[1];st.inv.add('v:'+x);names.forEach(n=>st.hyps.push(n+' : Invertible '+x))}
+      }
+      continue;
     }
-    case 'mul': {
-      let a=shape(t.args[0],env,line), b=shape(t.args[1],env,line);
-      if(a.r==null&&a.c==null) a={r:b.r,c:b.r};       // I слева
-      else if(b.r==null&&b.c==null) b={r:a.c,c:a.c};  // I справа
-      if(a.c!=null&&b.r!=null&&a.c!==b.r) err(`Несогласованные размерности в произведении: (...×${a.c}) * (${b.r}×...)`);
-      return {r:a.r,c:b.c};
+    if((m=s.match(/^theorem\s+(\w+)\s*:\s*(.+?)\s*:=\s*by\s*$/))){st.name=m[1];st.goals=[termParser(m[2]).eq()];st.goalLine=i;continue}
+    if(st.goals===null)throw new PErr('Ожидался theorem … := by',i+1);
+    break;
+  }
+  if(!st.goals)throw new PErr('Не найден theorem … := by',1);
+  return st;
+}
+function parseTactic(s,line){
+  let m;
+  if((m=s.match(/^let\s+(\w+)\s*:=\s*(.+)$/)))return{kind:'let',name:m[1],expr:termParser(m[2]).expr(),line};
+  if((m=s.match(/^rw\s*\[(.*)\]$/)))return{kind:'rw',items:m[1].split(',').map(x=>{x=x.trim();const rev=/^(←|<-)/.test(x);return{name:x.replace(/^(←|<-)\s*/,''),rev}}),line};
+  if((m=s.match(/^apply\s+(\w+)$/)))return{kind:'apply',name:m[1],line};
+  if(s==='symm')return{kind:'symm',line};
+  if(s==='rfl')return{kind:'rfl',line};
+  if(s==='sorry')return{kind:'sorry',line};
+  throw new PErr('Неизвестная тактика. Набор: let, rw, apply, symm, rfl, sorry',line);
+}
+function rwOnce(t,rule,rev,lets,inv){
+  const from=rev?rule.concl.r:rule.concl.l,to=rev?rule.concl.l:rule.concl.r;
+  function go(t){
+    if(t.args){const na=[];let ch=false;
+      for(const a of t.args){const r=go(a);if(r){na.push(r);ch=true}else na.push(a)}
+      if(ch)return{op:t.op,args:na}}
+    const B={};
+    if(match(from,t,B,lets)){
+      if(rule.side==='inv'&&!knownInv(tkey(B['?X']),inv))throw new PErr('side condition: Invertible '+pp(B['?X'])+' не доказан',0);
+      return subst(to,B);
     }
+    return null;
+  }
+  return go(t);
+}
+function execTactic(st,tac){
+  const g=st.goals[0];
+  const need=()=>{if(!g)throw new PErr('no goals to be solved',tac.line)};
+  switch(tac.kind){
+    case 'let':st.lets[tac.name]=tac.expr;st.hyps.push(tac.name+' := '+pp(tac.expr));return 'определение добавлено';
+    case 'symm':need();st.goals[0]={l:g.r,r:g.l};return 'цель симметризована';
+    case 'rfl':need();
+      if(tkey(delta(g.l,st.lets))===tkey(delta(g.r,st.lets))){st.goals.shift();return 'goal closed by rfl'}
+      throw new PErr('rfl failed: части не равны (с точностью до let)',tac.line);
+    case 'sorry':need();st.goals.shift();st.sorry=true;return 'goal closed by sorry — declaration uses sorry';
+    case 'apply':{need();
+      const rule=RULES[tac.name];if(!rule)throw new PErr('неизвестная лемма '+tac.name,tac.line);
+      const B={};
+      if(!match(rule.concl.l,g.l,B,st.lets)||!match(rule.concl.r,g.r,B,st.lets))throw new PErr('apply failed: заключение '+rule.id+' не унифицируется с целью',tac.line);
+      if(rule.side==='inv'&&!knownInv(tkey(B['?X']),st.inv))throw new PErr('side condition: Invertible не доказан',tac.line);
+      st.goals.splice(0,1,...rule.premises.map(p=>({l:subst(p.l,B),r:subst(p.r,B)})));
+      return rule.premises.length?('apply '+rule.id+': '+rule.premises.length+' новых цели'):('apply '+rule.id+': goal closed');}
+    case 'rw':{need();let cur={l:g.l,r:g.r};
+      for(const it of tac.items){
+        const rule=RULES[it.name];if(!rule)throw new PErr('неизвестная лемма '+it.name,tac.line);
+        const nl=rwOnce(cur.l,rule,it.rev,st.lets,st.inv);
+        if(nl)cur={l:nl,r:cur.r};
+        else{const nr=rwOnce(cur.r,rule,it.rev,st.lets,st.inv);
+          if(nr)cur={l:cur.l,r:nr};
+          else throw new PErr('rewrite failed: образец '+(it.rev?'←':'')+rule.id+' не найден в цели',tac.line)}
+      }
+      st.goals[0]=cur;return 'rewrite выполнен';}
   }
 }
-const shEq=(a,b)=>(a.r==null||b.r==null||a.r===b.r)&&(a.c==null||b.c==null||a.c===b.c);
-
-/* ============================================================
-   7. ЧИСЛЕННАЯ ПРОВЕРКА (поиск контрпримеров)
-   ============================================================ */
-function ev(t,env){
-  switch(t.op){
-    case 'var': return env[t.name];
-    case 'const': return env.__eye;
-    case 'tr': return mT(ev(t.args[0],env));
-    case 'inv': { const M=mInv(ev(t.args[0],env)); if(!M) throw {skip:true}; return M; }
-    case 'add': return mAdd(ev(t.args[0],env),ev(t.args[1],env));
-    case 'sub': return mAdd(ev(t.args[0],env),ev(t.args[1],env),-1);
-    case 'mul': return mMul(ev(t.args[0],env),ev(t.args[1],env));
+function run(src,upto){
+  if(upto===undefined)upto=Infinity;
+  const lines=src.split('\n');
+  const st=parseHeader(lines);
+  const rows=[];let failed=false;
+  for(let i=0;i<lines.length;i++){
+    if(i<=st.goalLine)continue;
+    const s=lines[i].trim();
+    if(!s||s.startsWith('--'))continue;
+    if(i>upto)break;
+    if(failed){rows.push({line:i+1,ok:false,msg:'не выполнено: предыдущая тактика упала'});continue}
+    try{const tac=parseTactic(s,i+1);const msg=execTactic(st,tac);rows.push({line:i+1,ok:true,warn:tac.kind==='sorry',msg})}
+    catch(e){failed=true;rows.push({line:i+1,ok:false,msg:e.message})}
   }
+  return {st,rows,failed};
 }
-function numericCheck(lhs,rhs,mats,assumes,lets,tries=5){
-  const syms=[...new Set(mats.flatMap(m=>[m.r,m.c]).filter(d=>typeof d==='string'))];
-  for(let t=0;t<tries;t++){
-    const pool=[2,3,4,5].sort(()=>Math.random()-.5), dv={};
-    syms.forEach((s,i)=>dv[s]=pool[i%4]);
-    const res=d=>typeof d==='number'?d:dv[d];
-    const env={}, snap={};
-    try{
-      for(const m of mats){
-        const r=res(m.r), c=res(m.c);
-        env[m.name]=(assumes.includes(m.name)&&r===c)?rInvMat(r):rMat(r,c);
-        snap[m.name]=env[m.name];
-      }
-      env.__eye=eye(syms.length?dv[syms[0]]:2);
-      for(const L of lets) env[L.name]=ev(L.expr,env);
-      const A=ev(lhs,env), Bv=ev(rhs,env);
-      if(!mEq(A,Bv)) return {ok:false,ce:{dv,snap,A,B:Bv}};
-    }catch(e){ if(e&&e.skip) continue; throw e; }
-  }
-  return {ok:true};
-}
-
-/* ============================================================
-   8. ЗАДАЧИ
-   ============================================================ */
-const TASKS=[
-{
-  id:'inv-product', title:'Обратная к произведению', diff:'★★★',
-  stmt:'Пусть <b>A</b> и <b>B</b> — обратимые матрицы размера n×n. Докажите, что <b>(A·B)⁻¹ = B⁻¹·A⁻¹</b>.<br><br>Каждый шаг — равенство с обоснованием: ссылкой на правило или на ранее доказанные шаги. Цель проверяется по всем доказанным шагам в момент <code>qed</code>.',
-  hint:'Введите X = B⁻¹·A⁻¹ и покажите двумя цепочками, что (A·B)·X = I и X·(A·B) = I (ассоциативность + свойства обратной). Затем примените правило единственности обратной inv_unique с двумя предпосылками.',
-  rules:['mul_assoc','one_mul','mul_one','mul_inv','inv_mul','inv_unique'],
-  given:{mats:{A:['n','n'],B:['n','n']},assumes:['A','B']},
-  goalSrc:'(A * B)^-1 == B^-1 * A^-1',
-  skeleton:
-`theory LinearAlgebra
-
-given
-    n : Nat
-    A, B : Matrix(n, n)
-    assume invertible(A)
-    assume invertible(B)
-
-goal
-    (A * B)^-1 == B^-1 * A^-1
-
-proof
-    -- ваши шаги здесь
-
-qed`,
-  solution:
-`theory LinearAlgebra
-
-given
-    n : Nat
-    A, B : Matrix(n, n)
-    assume invertible(A)
-    assume invertible(B)
-
-goal
-    (A * B)^-1 == B^-1 * A^-1
-
-proof
-    let X = B^-1 * A^-1
-
-    step s1 : (A * B) * X == A * (B * X)          by mul_assoc
-    step s2 : B * X == (B * B^-1) * A^-1          by mul_assoc
-    step s3 : B * B^-1 == I                       by mul_inv
-    step s4 : (B * B^-1) * A^-1 == I * A^-1       by s3
-    step s5 : I * A^-1 == A^-1                    by one_mul
-    step s6 : B * X == A^-1                       by s2 s4 s5
-    step s7 : A * (B * X) == A * A^-1             by s6
-    step s8 : A * A^-1 == I                       by mul_inv
-    step s9 : (A * B) * X == I                    by s1 s7 s8
-
-    step t1 : X * (A * B) == (X * A) * B          by mul_assoc
-    step t2 : X * A == B^-1 * (A^-1 * A)          by mul_assoc
-    step t3 : A^-1 * A == I                       by inv_mul
-    step t4 : B^-1 * (A^-1 * A) == B^-1 * I       by t3
-    step t5 : B^-1 * I == B^-1                    by mul_one
-    step t6 : X * A == B^-1                       by t2 t4 t5
-    step t7 : (X * A) * B == B^-1 * B             by t6
-    step t8 : B^-1 * B == I                       by inv_mul
-    step t9 : X * (A * B) == I                    by t1 t7 t8
-
-    step fin : (A * B)^-1 == X                    by inv_unique s9 t9
-qed`
-},
-{
-  id:'sym-aat', title:'Симметричность A·Aᵀ', diff:'★',
-  stmt:'Пусть <b>A</b> — матрица размера m×n. Докажите, что матрица <b>A·Aᵀ</b> симметрична: <b>(A·Aᵀ)ᵀ = A·Aᵀ</b>.',
-  hint:'Раскройте транспонирование произведения (transpose_mul), затем примените инволютивность транспонирования (transpose_transpose) и соберите цепочку.',
-  rules:['transpose_mul','transpose_transpose','transpose_add'],
-  given:{mats:{A:['m','n']},assumes:[]},
-  goalSrc:'(A * A^T)^T == A * A^T',
-  skeleton:
-`theory LinearAlgebra
-
-given
-    m, n : Nat
-    A : Matrix(m, n)
-
-goal
-    (A * A^T)^T == A * A^T
-
-proof
-    -- ваши шаги здесь
-
-qed`,
-  solution:
-`theory LinearAlgebra
-
-given
-    m, n : Nat
-    A : Matrix(m, n)
-
-goal
-    (A * A^T)^T == A * A^T
-
-proof
-    step s1 : (A * A^T)^T == (A^T)^T * A^T   by transpose_mul
-    step s2 : (A^T)^T == A                   by transpose_transpose
-    step s3 : (A * A^T)^T == A * A^T         by s1 s2
-qed`
-}];
-TASKS.forEach(t=>t.goalEq=makeParser(t.goalSrc).eqOnly());
-
-/* ============================================================
-   9. ВЕРИФИКАТОР
-   ============================================================ */
-function verify(src,task){
-  const rows=[]; let prog;
-  try{ prog=makeParser(src).program(); }
-  catch(e){ return {status:'parse',message:`Синтаксическая ошибка (строка ${e.line??'?'}): ${e.message}`,rows}; }
-
-  // Условие задачи должно быть нетронуто
-  for(const [name,[r,c]] of Object.entries(task.given.mats)){
-    const d=prog.mats.find(m=>m.name===name);
-    if(!d||d.r!==r||d.c!==c) return {status:'cond',message:`Блок given изменён: требуется ${name} : Matrix(${r}, ${c}). Восстановите условие.`,rows};
-  }
-  for(const a of task.given.assumes) if(!prog.assumes.includes(a))
-    return {status:'cond',message:`Блок given изменён: требуется assume invertible(${a}).`,rows};
-  if(tkey(prog.goal.l)!==tkey(task.goalEq.l)||tkey(prog.goal.r)!==tkey(task.goalEq.r))
-    return {status:'cond',message:'Цель (goal) изменена — её нельзя менять.',rows};
-
-  const env={}, lets={}, letEqs=[], facts={}, invSet=new Set(prog.assumes.map(a=>'v:'+a));
-    // регистрируем матрицы из блока given в типовом окружении
-  for(const m of prog.mats) env[m.name]={r:m.r,c:m.c};
-  const seen=new Set(); let algebraUsed=false, anyFail=false;
-  const trivial=t=>({l:t,r:t}); // регистрация термов шага без их склейки
-
-  for(const s of prog.steps){
-    if(seen.has(s.name)){ rows.push({name:s.name,line:s.line,ok:false,msg:'Имя уже использовано'}); anyFail=true; continue; }
-    seen.add(s.name);
-    try{
-      if(s.kind==='let'){
-        const sh=shape(s.expr,env,s.line);
-        env[s.name]=sh; lets[s.name]=s.expr;
-        letEqs.push({l:{op:'var',name:s.name},r:s.expr});
-        facts[s.name]={l:{op:'var',name:s.name},r:s.expr};
-        rows.push({name:s.name,line:s.line,ok:true,info:true,msg:`определение принято (${sh.r??'?'}×${sh.c??'?'})`});
-        continue;
-      }
-      const sl=shape(s.lhs,env,s.line), sr=shape(s.rhs,env,s.line);
-      if(!shEq(sl,sr)) throw new PErr('Размерности левой и правой части не совпадают',s.line);
-
-      let ok=false, msg='';
-      const num=()=>numericCheck(s.lhs,s.rhs,prog.mats,prog.assumes,Object.values(lets).map((e,i)=>({name:Object.keys(lets)[i],expr:e})));
-
-      if(s.mode==='algebra'){
-        const nc=num();
-        if(nc.ok){ ok=true; algebraUsed=true; msg='принято численно (вероятностная проверка, без формального обоснования)'; }
-        else msg='утверждение ЛОЖНО — найден контрпример';
-        if(!ok){ const r={name:s.name,line:s.line,ok:false,msg}; if(nc.ce) r.ce=nc.ce; rows.push(r); anyFail=true; continue; }
-      }
-      else if(RULES[s.refs[0]]){
-        const rule=RULES[s.refs[0]];
-        if(!task.rules.includes(rule.id)) throw new PErr(`Правило '${rule.id}' недоступно в этой задаче`,s.line);
-        let B=null;
-        for(const [L,R] of [[s.lhs,s.rhs],[s.rhs,s.lhs]]){
-          const b={}; if(match(rule.concl.l,L,b,lets)&&match(rule.concl.r,R,b,lets)){ B=b; break; }
-        }
-        if(B){
-          if(rule.side==='inv'&&!knownInv(tkey(B['?X']),invSet))
-            msg=`Для правила ${rule.id} нужно знать, что ${tkey(B['?X']).replace('v:','')} обратима (assume invertible(...))`;
-          else{
-            const cited=[];
-            for(const ref of s.refs.slice(1)){
-              if(!facts[ref]) throw new PErr(`Предпосылка '${ref}' не доказана ранее`,s.line);
-              cited.push(facts[ref]);
-            }
-            const cl=closure([...letEqs,...cited,trivial(s.lhs),trivial(s.rhs)]);
-            const bad=rule.premises.find(p=>{const i={l:subst(p.l,B),r:subst(p.r,B)};return !cl.eq(i.l,i.r);});
-            if(bad) msg=`Предпосылка правила ${rule.id} (${rule.display.includes('==')?'см. схему':''}) не обоснована указанными шагами`;
-            else{ ok=true; msg=`частный случай правила ${rule.id}`+(rule.premises.length?' (предпосылки проверены)':''); }
-          }
-        }else{
-          const nc=num();
-          msg=nc.ok?`Утверждение верно численно, но НЕ является частным случаем правила ${rule.id} — неверное обоснование`
-                   :'Утверждение ЛОЖНО — найден контрпример';
-          if(!nc.ok){ rows.push({name:s.name,line:s.line,ok:false,msg,ce:nc.ce}); anyFail=true; continue; }
-        }
-      }
-      else{
-        const cited=[];
-        for(const ref of s.refs){
-          if(RULES[ref]) throw new PErr(`Правило '${ref}' должно стоять первым в списке by`,s.line);
-          if(!facts[ref]) throw new PErr(`Ссылка '${ref}': шаг не доказан ранее или не существует`,s.line);
-          cited.push(facts[ref]);
-        }
-        const cl=closure([...letEqs,...cited,trivial(s.lhs),trivial(s.rhs)]);
-        if(cl.eq(s.lhs,s.rhs)){ ok=true; msg='следует из указанных шагов (конгруэнтное замыкание)'; }
-        else{
-          const nc=num();
-          if(nc.ok) msg='Утверждение верно численно, но НЕ следует из указанных шагов — добавьте ссылки или промежуточные шаги';
-          else{ rows.push({name:s.name,line:s.line,ok:false,msg:'Утверждение ЛОЖНО — найден контрпример',ce:nc.ce}); anyFail=true; continue; }
-        }
-      }
-      rows.push({name:s.name,line:s.line,ok,msg});
-      if(ok) facts[s.name]={l:s.lhs,r:s.rhs}; else anyFail=true;
-    }catch(e){
-      rows.push({name:s.name,line:s.line,ok:false,msg:e.message}); anyFail=true;
-    }
-  }
-
-  // qed: цель должна выводиться из ВСЕХ доказанных шагов
-  const all=[...letEqs,...Object.entries(facts).filter(([k])=>!lets[k]).map(([,v])=>v),trivial(prog.goal.l),trivial(prog.goal.r)];
-  const goalOk=closure(all).eq(prog.goal.l,prog.goal.r);
-  rows.push({name:'qed',line:'—',ok:goalOk&&!anyFail,
-    msg:goalOk?(anyFail?'цель выводится, но в доказательстве есть ошибочные шаги':'цель выведена из доказанных шагов ✓'):'цель НЕ выводится из доказанных шагов'});
-  const status=(goalOk&&!anyFail)?(algebraUsed?'num':'formal'):'fail';
-  return {status,rows,algebraUsed};
-}
-
-/* ============================================================
-   10. UI
-   ============================================================ */
+/* ================= уровни ================= */
+const LEVELS=[
+{id:'tr-tr',title:'Инволюция транспонирования',diff:1,xp:40,tags:['транспонирование'],
+ stmt:'Разминка: транспонирование twice возвращает матрицу. Один <code>rw</code> и <code>rfl</code>.',
+ rules:['transpose_transpose'],
+ skeleton:'import MathProof.LinearAlgebra\n\nvariable (m n : Nat)\nvariable (A : Matrix m n)\n\ntheorem tr_tr : (Aᵀ)ᵀ = A := by\n  -- ваши тактики\n',
+ solution:'import MathProof.LinearAlgebra\n\nvariable (m n : Nat)\nvariable (A : Matrix m n)\n\ntheorem tr_tr : (Aᵀ)ᵀ = A := by\n  rw [transpose_transpose]\n  rfl'},
+{id:'sym-aat',title:'Симметричность A·Aᵀ',diff:2,xp:80,tags:['транспонирование','симметрия'],
+ stmt:'Докажи, что <b>(A·Aᵀ)ᵀ = A·Aᵀ</b>: раскрой транспонирование произведения, затем инволюцию.',
+ rules:['transpose_mul','transpose_transpose'],
+ skeleton:'import MathProof.LinearAlgebra\n\nvariable (m n : Nat)\nvariable (A : Matrix m n)\n\ntheorem symm_aat : (A * Aᵀ)ᵀ = A * Aᵀ := by\n  -- ваши тактики\n',
+ solution:'import MathProof.LinearAlgebra\n\nvariable (m n : Nat)\nvariable (A : Matrix m n)\n\ntheorem symm_aat : (A * Aᵀ)ᵀ = A * Aᵀ := by\n  rw [transpose_mul, transpose_transpose]\n  rfl'},
+{id:'inv-inv',title:'Обратная к обратной',diff:2,xp:80,tags:['обратная'],
+ stmt:'Если A обратима, то <b>(A⁻¹)⁻¹ = A</b>. Кернел проверит предусловие Invertible.',
+ rules:['inv_inv','mul_inv','inv_mul'],
+ skeleton:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A : Matrix n n)\nvariable (hA : Invertible A)\n\ntheorem inv_inv_th : (A⁻¹)⁻¹ = A := by\n  -- ваши тактики\n',
+ solution:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A : Matrix n n)\nvariable (hA : Invertible A)\n\ntheorem inv_inv_th : (A⁻¹)⁻¹ = A := by\n  rw [inv_inv]\n  rfl'},
+{id:'tr-inv',title:'Транспонирование ↔ обращение',diff:2,xp:90,tags:['транспонирование','обратная'],
+ stmt:'Покажи, что операции коммутируют: <b>(A⁻¹)ᵀ = (Aᵀ)⁻¹</b>.',
+ rules:['transpose_inv','transpose_transpose'],
+ skeleton:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A : Matrix n n)\nvariable (hA : Invertible A)\n\ntheorem tr_inv : (A⁻¹)ᵀ = (Aᵀ)⁻¹ := by\n  -- ваши тактики\n',
+ solution:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A : Matrix n n)\nvariable (hA : Invertible A)\n\ntheorem tr_inv : (A⁻¹)ᵀ = (Aᵀ)⁻¹ := by\n  rw [transpose_inv]\n  rfl'},
+{id:'inv-prod',title:'Обратная к произведению',diff:3,xp:150,tags:['обратная','произведение'],
+ stmt:'Босс уровня: <b>(A·B)⁻¹ = B⁻¹·A⁻¹</b>. План: <code>symm</code> → <code>apply inv_unique</code> → две цепочки <code>rw</code> → <code>rfl</code> на каждую цель.',
+ rules:['mul_assoc','one_mul','mul_one','mul_inv','inv_mul','inv_unique'],
+ skeleton:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A B : Matrix n n)\nvariable (hA : Invertible A) (hB : Invertible B)\n\ntheorem inv_prod : (A * B)⁻¹ = B⁻¹ * A⁻¹ := by\n  -- ваши тактики\n',
+ solution:'import MathProof.LinearAlgebra\n\nvariable (n : Nat)\nvariable (A B : Matrix n n)\nvariable (hA : Invertible A) (hB : Invertible B)\n\ntheorem inv_prod : (A * B)⁻¹ = B⁻¹ * A⁻¹ := by\n  symm\n  apply inv_unique\n  rw [mul_assoc, ← mul_assoc, mul_inv, one_mul, mul_inv]\n  rfl\n  rw [mul_assoc, ← mul_assoc, inv_mul, one_mul, inv_mul]\n  rfl'}
+];
+const RANKS=[[0,'Новичок'],[100,'Подмастерье'],[260,'Лемматик'],[420,'Теорематик'],[560,'∎ Master']];
+const SEED=[['lemma_lord',560,5],['qed_cat',470,4],['matrix_masha',340,3],['eps_delta',260,3],['ker_nil',150,2],['span_span',80,1]];
+/* ================= состояние ================= */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-let cur=TASKS[0];
-
-function renderTabs(){
-  $('tabs').innerHTML=TASKS.map(t=>`<button class="tab${t===cur?' active':''}" data-id="${t.id}">${esc(t.title)} ${t.diff}</button>`).join('');
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ save(); cur=TASKS.find(t=>t.id===b.dataset.id); loadTask(); });
+const store={
+  get(k,d){try{const v=localStorage.getItem('mp3_'+k);return v===null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('mp3_'+k,JSON.stringify(v))}catch(e){}}
+};
+let cur=LEVELS[0],view='tasks',diffF=0,sortBy='diff',query='';
+let solved=new Set(store.get('solved',[]));
+let xp=store.get('xp',0);
+let prefs=Object.assign({fs:13,theme:'indigo',dens:false,motion:true,linehl:true,hl:true,auto:true,sound:true},store.get('prefs',{}));
+/* ================= звук ================= */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,type,g,when){
+  if(!prefs.sound)return;const c=ac();if(!c)return;
+  const t=c.currentTime+(when||0);const o=c.createOscillator(),v=c.createGain();
+  o.type=type||'sine';o.frequency.value=f;
+  v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g||.06,t+.012);v.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(v).connect(c.destination);o.start(t);o.stop(t+d+.02);
 }
-function loadTask(){
-  renderTabs();
-  $('tTitle').textContent=cur.title; $('tDiff').textContent=cur.diff;
-  $('tStmt').innerHTML=cur.stmt; $('tHint').textContent=cur.hint;
-  $('tRules').innerHTML=cur.rules.map(id=>{const r=RULES[id];
-        return `<div class="rule"><span class="rn">${id}</span><code>${esc(r.display)}</code>${r.side?'<span class="side">требует: обратимость X</span>':''}${r.premises.length?`<span class="side">предпосылки: ${esc(r.premisesDisplay.join('; '))}</span>`:''}</div>`;}).join('');
-  $('ed').value=localStorage.getItem('mp_'+cur.id)||cur.skeleton;
-  gutter(); $('res').innerHTML='<div class="banner idle">Напишите доказательство и нажмите «Проверить».</div>';
+const sfx={
+  tick(){tone(880,.07,'sine',.035)},
+  ok(){tone(660,.1,'triangle',.05);tone(990,.14,'triangle',.045,.07)},
+  bad(){tone(160,.22,'sawtooth',.05);tone(120,.24,'sawtooth',.04,.05)},
+  win(){[523,659,784,1046].forEach((f,i)=>tone(f,.22,'triangle',.055,i*.09))},
+  click(){tone(440,.05,'sine',.03)}
+};
+/* ================= конфетти ================= */
+const fx=$('fx'),fctx=fx.getContext('2d');let parts=[],fxRun=false;
+function fxSize(){const d=Math.min(2,window.devicePixelRatio||1);fx.width=innerWidth*d;fx.height=innerHeight*d;fctx.setTransform(d,0,0,d,0,0)}
+fxSize();addEventListener('resize',fxSize);
+function burst(){
+  if(!prefs.motion)return;
+  const cs=getComputedStyle(document.body);
+  const cols=['--dom','--acc','--acc2','--mag','--warn','--ok'].map(v=>cs.getPropertyValue(v).trim());
+  const glyphs=['∎','⊢','∀','✦','⁻¹','ᵀ','λ'];
+  for(let i=0;i<70;i++)parts.push({x:innerWidth/2+(Math.random()-.5)*220,y:innerHeight*.35,vx:(Math.random()-.5)*7,vy:-Math.random()*7-2,g:.16,r:Math.random()*6.28,vr:(Math.random()-.5)*.2,s:12+Math.random()*14,c:cols[i%cols.length],t:glyphs[i%glyphs.length],life:1});
+  if(!fxRun){fxRun=true;requestAnimationFrame(fxLoop)}
 }
-function save(){ localStorage.setItem('mp_'+cur.id,$('ed').value); }
-function gutter(){
-  const n=$('ed').value.split('\n').length;
-  $('gutter').textContent=Array.from({length:n},(_,i)=>i+1).join('\n');
-  $('gutter').scrollTop=$('ed').scrollTop;
+function fxLoop(){
+  fctx.clearRect(0,0,innerWidth,innerHeight);
+  parts=parts.filter(p=>p.life>0);
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.r+=p.vr;p.life-=.011;
+    fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.r);fctx.globalAlpha=Math.max(0,p.life);
+    fctx.fillStyle=p.c;fctx.font='700 '+p.s+'px '+'Georgia,serif';fctx.textAlign='center';fctx.fillText(p.t,0,0);fctx.restore()}
+  if(parts.length)requestAnimationFrame(fxLoop);else{fxRun=false;fctx.clearRect(0,0,innerWidth,innerHeight)}
 }
-function ceText(ce){
-  let s='Контрпример (размерности: '+Object.entries(ce.dv).map(([k,v])=>k+'='+v).join(', ')+'):\n';
-  for(const [k,M] of Object.entries(ce.snap)) s+=k+' =\n'+fM(M)+'\n';
-  s+='Левая часть =\n'+fM(ce.A)+'\nПравая часть =\n'+fM(ce.B);
-  return s;
+/* ================= тосты ================= */
+function toast(msg,action){
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML='<span>'+esc(msg)+'</span>';
+  if(action){const b=document.createElement('button');b.textContent=action.label;b.onclick=()=>{action.fn();el.remove()};el.appendChild(b)}
+  $('toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),320)},5200);
 }
-function run(){
-  save();
-  const v=verify($('ed').value,cur);
-  let html='';
-  if(v.status==='parse'||v.status==='cond') html=`<div class="banner bad">❌ ${esc(v.message)}</div>`;
-  else if(v.status==='formal') html='<div class="banner ok">✅ Доказательство ПРИНЯТО — формальная проверка (правила + эквациональная логика)</div>';
-  else if(v.status==='num') html='<div class="banner num">🟡 Принято, но с численными шагами (by algebra). Для высшего рейтинга обоснуйте каждый шаг правилами.</div>';
-  else html='<div class="banner bad">❌ Доказательство не принято — см. ошибки ниже</div>';
-  for(const r of v.rows){
-    const cls=r.ok?(r.info?'info':'ok'):'bad', ic=r.ok?(r.info?'·':'✓'):'✗';
-    html+=`<div class="row ${cls}"><span class="ic">${ic}</span><span class="nm">${esc(r.name)}</span><span class="ln">стр.${r.line}</span><span class="msg">${esc(r.msg)}${r.ce?`<pre class="ce">${esc(ceText(r.ce))}</pre>`:''}</span></div>`;
+/* ================= вид/настройки ================= */
+function applyPrefs(){
+  const b=document.body;
+  b.dataset.theme=prefs.theme;b.dataset.density=prefs.dens?'compact':'cozy';
+  b.dataset.motion=prefs.motion?'on':'off';b.dataset.linehl=prefs.linehl?'on':'off';b.dataset.hl=prefs.hl?'on':'off';
+  document.documentElement.style.setProperty('--efs',prefs.fs+'px');
+  document.documentElement.style.setProperty('--lh',Math.round(prefs.fs*1.62)+'px');
+  $('fsOut').textContent=prefs.fs;
+  $('themeSel').value=prefs.theme;
+  $('densSw').setAttribute('aria-pressed',prefs.dens);
+  $('motSw').setAttribute('aria-pressed',prefs.motion);
+  $('lineSw').setAttribute('aria-pressed',prefs.linehl);
+  $('hlSw').setAttribute('aria-pressed',prefs.hl);
+  $('autoSw').setAttribute('aria-pressed',prefs.auto);
+  $('sndBtn').setAttribute('aria-pressed',prefs.sound);
+  $('sndBtn').textContent=prefs.sound?'🔊':'';
+  store.set('prefs',prefs);
+  paint();
+}
+$('fsD').onclick=()=>{prefs.fs=Math.max(11,prefs.fs-1);applyPrefs();sfx.click()};
+$('fsU').onclick=()=>{prefs.fs=Math.min(20,prefs.fs+1);applyPrefs();sfx.click()};
+$('themeSel').onchange=e=>{prefs.theme=e.target.value;applyPrefs();sfx.click()};
+const swBind=(id,key)=>{$(id).onclick=()=>{prefs[key]=!prefs[key];applyPrefs();sfx.click()}};
+swBind('densSw','dens');swBind('motSw','motion');swBind('lineSw','linehl');swBind('hlSw','hl');swBind('autoSw','auto');
+$('viewReset').onclick=()=>{prefs=Object.assign({fs:13,theme:'indigo',dens:false,motion:true,linehl:true,hl:true,auto:true},prefs,{sound:prefs.sound});applyPrefs();toast('Вид сброшен')};
+$('sndBtn').onclick=()=>{prefs.sound=!prefs.sound;applyPrefs();if(prefs.sound)sfx.ok();toast(prefs.sound?'Звук включён':'Звук выключен')};
+/* ================= навигация ================= */
+function setView(v){
+  view=v;
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id==='view-'+v));
+  if(v==='rating')renderLb();
+  if(v==='library')renderLib();
+  if(v==='live'&&!$('liveHolder').firstChild){
+    const f=document.createElement('iframe');f.id='liveFrame';f.src='https://lean.cau.li/';f.title='Lean 4 WASM playground';
+    $('liveHolder').appendChild(f);
   }
-  $('res').innerHTML=html;
+  sfx.click();
 }
-$('btnRun').onclick=run;
-$('btnSol').onclick=()=>{ if(confirm('Заменить содержимое редактора эталонным решением?')){ $('ed').value=cur.solution; gutter(); save(); } };
-$('btnReset').onclick=()=>{ if(confirm('Сбросить к заготовке задачи?')){ $('ed').value=cur.skeleton; gutter(); save(); } };
-let svT; $('ed').addEventListener('input',()=>{ gutter(); clearTimeout(svT); svT=setTimeout(save,300); });
-$('ed').addEventListener('scroll',()=>{ $('gutter').scrollTop=$('ed').scrollTop; });
-$('ed').addEventListener('keydown',e=>{
-  if(e.key==='Tab'){ e.preventDefault(); const t=e.target,s=t.selectionStart; t.value=t.value.slice(0,s)+'    '+t.value.slice(t.selectionEnd); t.selectionStart=t.selectionEnd=s+4; gutter(); }
-  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); run(); }
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+/* ================= список задач ================= */
+function statusOf(l){return solved.has(l.id)?'done':(store.get('draft_'+l.id,null)!==null?'draft':'new')}
+function renderList(){
+  let ls=LEVELS.filter(l=>(diffF===0||l.diff===diffF)&&(l.title.toLowerCase().includes(query)||l.tags.join(' ').includes(query)));
+  const stOrd={new:0,draft:1,done:2};
+  ls.sort((a,b)=>sortBy==='xp'?b.xp-a.xp:sortBy==='name'?a.title.localeCompare(b.title,'ru'):sortBy==='status'?stOrd[statusOf(a)]-stOrd[statusOf(b)]:a.diff-b.diff);
+  $('taskList').innerHTML=ls.length?ls.map(l=>{
+    const st=statusOf(l);
+    return '<button class="task'+(l===cur?' on':'')+'" data-id="'+l.id+'"><span class="t">'+esc(l.title)+'<span class="st '+st+'">'+(st==='done'?'✓':st==='draft'?'•':'○')+'</span></span>'+
+      '<span class="m"><span class="stars">'+'★'.repeat(l.diff)+'</span>'+l.tags.map(t=>'<span class="tag">'+esc(t)+'</span>').join('')+'<span class="xp">+'+l.xp+' XP</span></span></button>';
+  }).join(''):'<div class="legend">Ничего не найдено. Сбрось фильтр или запрос.</div>';
+  document.querySelectorAll('.task').forEach(b=>b.onclick=()=>{saveDraft();cur=LEVELS.find(l=>l.id===b.dataset.id);loadLevel();sfx.click()});
+}
+$('q').oninput=e=>{query=e.target.value.toLowerCase().trim();renderList()};
+$('sortSel').onchange=e=>{sortBy=e.target.value;renderList()};
+document.querySelectorAll('#diffChips .chip').forEach(c=>c.onclick=()=>{diffF=+c.dataset.d;document.querySelectorAll('#diffChips .chip').forEach(x=>x.classList.toggle('on',x===c));renderList();sfx.click()});
+/* ================= редактор ================= */
+const ed=$('ed'),hl=$('hl'),gut=$('gutter'),band=$('band');
+const KW=/\b(import|variable|theorem|by|let|rw|apply|symm|rfl|sorry|Nat|Matrix|Invertible)\b/;
+const LM=/\b(mul_assoc|one_mul|mul_one|mul_inv|inv_mul|inv_unique|inv_inv|transpose_mul|transpose_transpose|transpose_inv)\b/;
+function highlight(src){
+  return src.split('\n').map(line=>{
+    const re=/(--.*$)|\b(import|variable|theorem|by|let|rw|apply|symm|rfl|sorry|Nat|Matrix|Invertible)\b|\b(mul_assoc|one_mul|mul_one|mul_inv|inv_mul|inv_unique|inv_inv|transpose_mul|transpose_transpose|transpose_inv)\b|([⁻¹←=*:\[\]()])|(\b[A-Za-z_]\w*\b(?=\s*:))/g;
+    let out='',last=0,m;
+    while((m=re.exec(line))){
+      out+=esc(line.slice(last,m.index));
+      const cls=m[1]?'tok-c':m[2]?'tok-k':m[3]?'tok-l':m[4]?'tok-o':'tok-t';
+      out+='<span class="'+cls+'">'+esc(m[0])+'</span>';
+      last=m.index+m[0].length;
+    }
+    return out+esc(line.slice(last));
+  }).join('\n')+'\n';
+}
+function paint(){
+  const src=ed.value;
+  hl.innerHTML=highlight(src);
+  const n=src.split('\n').length;
+  gut.textContent=Array.from({length:n},(_,i)=>i+1).join('\n');
+  syncScroll();placeBand();
+}
+function syncScroll(){hl.scrollTop=ed.scrollTop;hl.scrollLeft=ed.scrollLeft;gut.scrollTop=ed.scrollTop}
+function cursorLine(){return ed.value.slice(0,ed.selectionStart).split('\n').length-1}
+function placeBand(){
+  const lh=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lh'));
+  const pad=parseFloat(getComputedStyle(document.body).getPropertyValue('--pad'))||12;
+  band.style.top=(pad+cursorLine()*lh-ed.scrollTop)+'px';
+  $('ivFoot').textContent='курсор: строка '+(cursorLine()+1);
+}
+ed.addEventListener('scroll',()=>{syncScroll();placeBand()});
+ed.addEventListener('input',()=>{paint();saveDraft();renderList();if(prefs.auto){clearTimeout(ed._t);ed._t=setTimeout(refresh,260)}});
+['keyup','click','select'].forEach(ev=>ed.addEventListener(ev,()=>{placeBand();renderIVAtCursor()}));
+ed.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const s=ed.selectionStart;ed.value=ed.value.slice(0,s)+'  '+ed.value.slice(ed.selectionEnd);ed.selectionStart=ed.selectionEnd=s+2;paint();saveDraft()}
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();refresh(true)}
 });
-
-// самотест: эталонные решения обязаны проходить формальную проверку
-for(const t of TASKS){
-  const v=verify(t.solution,t);
-  console.assert(v.status==='formal','SELFTEST FAIL:',t.id,v);
+function saveDraft(){store.set('draft_'+cur.id,ed.value)}
+function loadLevel(){
+  ed.value=store.get('draft_'+cur.id,null)??cur.skeleton;
+  $('tRules').innerHTML=cur.rules.map(id=>{const r=RULES[id];
+    return '<div class="rule"><span class="rn">'+id+'</span><code>'+esc(r.display)+'</code>'+(r.side?'<div class="side">требует: Invertible X</div>':'')+(r.premises.length?'<div class="side">предпосылки: '+r.premises.length+'</div>':'')+'</div>'}).join('');
+  paint();renderList();refresh();
 }
-
-loadTask();
+/* ================= infoview + вердикт ================= */
+function renderIV(st,err){
+  let h=st.hyps.map(x=>'<div class="hyp">'+esc(x)+'</div>').join('');
+  if(st.goals.length){
+    h+='<div class="goal">⊢ '+esc(peq(st.goals[0]))+'</div>';
+    h+=st.goals.slice(1).map(g=>'<div class="goal other">⊢ '+esc(peq(g))+'</div>').join('');
+  }else h+='<div class="goal none">no goals ∎</div>';
+  if(err)h+='<div class="err">'+esc(err)+'</div>';
+  const body=$('ivBody');body.innerHTML=h;
+  body.classList.remove('pulse');void body.offsetWidth;body.classList.add('pulse');
+}
+function renderIVAtCursor(){
+  try{const r=run(ed.value,cursorLine());renderIV(r.st,r.failed?(r.rows.find(x=>!x.ok)||{}).msg:null)}
+  catch(e){$('ivBody').innerHTML='<div class="err">'+esc(e.message)+'</div>'}
+}
+let lastStatus='';
+function refresh(manual){
+  saveDraft();
+  let full;
+  try{full=run(ed.value)}
+  catch(e){$('res').innerHTML='<div class="banner bad">❌ '+esc(e.message)+'</div>';renderIVAtCursor();return}
+  renderIVAtCursor();
+  const unsolved=full.st.goals.length;
+  let status,html;
+  if(full.failed){status='bad';html='<div class="banner bad">❌ Ошибка тактики — строка '+(full.rows.find(r=>!r.ok)||{}).line+'</div>'}
+  else if(unsolved){status='bad';html='<div class="banner bad">❌ unsolved goals: '+unsolved+'</div>'}
+  else if(full.st.sorry){status='warn';html='<div class="banner warn">🟡 Принято, но declaration uses «sorry» — доказательство неполное</div>'}
+  else{status='ok';html='<div class="banner ok">✅ proof accepted · demo kernel ∎</div>'}
+  html+='<div class="rows">'+full.rows.map(r=>'<div class="row '+(r.ok?(r.warn?'warn':'ok'):'bad')+'" data-line="'+r.line+'"><span class="ic">'+(r.ok?(r.warn?'!':'✓'):'✗')+'</span><span class="ln">стр. '+r.line+'</span><span class="msg">'+esc(r.msg)+'</span></div>').join('')+'</div>';
+  $('res').innerHTML=html;
+  document.querySelectorAll('.row').forEach(r=>r.onclick=()=>{
+    const ln=+r.dataset.line;const lines=ed.value.split('\n');
+    let pos=0;for(let i=0;i<ln-1;i++)pos+=lines[i].length+1;
+    ed.focus();ed.selectionStart=ed.selectionEnd=pos;placeBand();renderIVAtCursor();sfx.click();
+  });
+  if(status!==lastStatus){
+    if(status==='ok'){
+      sfx.win();burst();
+      if(!solved.has(cur.id)){
+        solved.add(cur.id);xp+=cur.xp;store.set('solved',[...solved]);store.set('xp',xp);
+        toast('+'+cur.xp+' XP · «'+cur.title+'» решено');
+        updateProgress();renderList();renderMini();
+      }
+    }
+    else if(status==='bad'&&manual)sfx.bad();
+    else if(status==='ok')sfx.ok();
+    lastStatus=status;
+  }else if(manual&&status==='ok')sfx.ok();
+  updateProgress();
+}
+$('btnRun').onclick=()=>refresh(true);
+$('btnSol').onclick=()=>{if(confirm('Заменить содержимое эталонным решением?')){ed.value=cur.solution;paint();saveDraft();refresh(true);sfx.click()}};
+$('btnReset').onclick=()=>{
+  const prev=ed.value;
+  ed.value=cur.skeleton;paint();saveDraft();refresh();renderList();
+  toast('Черновик сброшен',{label:'Вернуть',fn:()=>{ed.value=prev;paint();saveDraft();refresh()}});
+  sfx.click();
+};
+/* ================= прогресс / рейтинг ================= */
+function rankOf(x){let r=RANKS[0][1];for(const[t,n]of RANKS)if(x>=t)r=n;return r}
+function nextRank(x){for(const[t,n]of RANKS)if(x<t)return[t,n];return null}
+function updateProgress(){
+  $('xpChip').textContent='✦ '+xp+' XP';
+  $('stSolved').textContent=solved.size+'/'+LEVELS.length;
+  $('rankName').textContent=rankOf(xp);
+  const nx=nextRank(xp);
+  if(nx){const prev=[...RANKS].reverse().find(([t])=>xp>=t)[0];
+    $('xpFill').style.width=Math.min(100,((xp-prev)/(nx[0]-prev))*100)+'%';
+    $('xpSub').textContent=xp+' / '+nx[0]+' XP до ранга «'+nx[1]+'»';
+  }else{$('xpFill').style.width='100%';$('xpSub').textContent='Максимальный ранг. ∎'}
+}
+function lbRows(){
+  const rows=SEED.map(([n,x,s])=>({name:n,xp:x,solved:s,you:false}));
+  rows.push({name:'ты',xp:xp,solved:solved.size,you:true});
+  return rows;
+}
+function renderMini(){
+  const rows=lbRows().sort((a,b)=>b.xp-a.xp).slice(0,4);
+  $('miniLb').innerHTML=rows.map((r,i)=>'<div class="r'+(r.you?' you':'')+'"><span>'+(i+1)+'</span><span>'+esc(r.name)+'</span><b>'+r.xp+'</b></div>').join('');
+}
+function renderLb(){
+  const q=($('lbQ').value||'').toLowerCase();
+  const s=$('lbSort').value;
+  const rows=lbRows().filter(r=>r.name.toLowerCase().includes(q));
+  rows.sort((a,b)=>s==='name'?a.name.localeCompare(b.name,'ru'):s==='solved'?b.solved-a.solved:b.xp-a.xp);
+  $('lbBody').innerHTML=rows.map((r,i)=>'<tr class="'+(r.you?'you':'')+'"><td class="medal">'+(i<3?['🥇','🥈',''][i]:i+1)+'</td><td>'+esc(r.name)+(r.you?' ←':'')+'</td><td>'+rankOf(r.xp)+'</td><td>'+r.solved+'</td><td style="text-align:right;color:var(--acc2);font-weight:700">'+r.xp+'</td></tr>').join('');
+}
+$('lbQ').oninput=renderLb;$('lbSort').onchange=renderLb;
+/* ================= библиотека ================= */
+function renderLib(){
+  $('libGrid').innerHTML=Object.values(RULES).map(r=>{
+    const used=LEVELS.filter(l=>l.rules.includes(r.id)).map(l=>l.title);
+    return '<div class="libcard"><span class="rn">'+r.id+'</span><code>'+esc(r.display)+'</code><p>'+esc(r.desc)+'</p>'+
+      (r.side?'<p style="color:var(--warn);margin-top:6px">предусловие: Invertible X</p>':'')+
+      (r.premises.length?'<p style="color:var(--warn);margin-top:6px">предпосылки: '+r.premises.map(p=>esc(peq(p))).join('; ')+'</p>':'')+
+      (used.length?'<div class="use">используется: '+esc(used.join(', '))+'</div>':'')+'</div>';
+  }).join('');
+  $('cheat').innerHTML=[
+    ['rw [h]','переписать цель леммой h слева направо'],
+    ['rw [← h]','переписать справа налево'],
+    ['rw [h1, h2]','цепочка переписываний'],
+    ['apply h','свести цель к предпосылкам h'],
+    ['symm','поменять части цели местами'],
+    ['rfl','закрыть цель вида t = t'],
+    ['let x := e','ввести локальное определение'],
+    ['sorry','закрыть цель ценой неполноты']
+  ].map(([a,b])=>'<div><b>'+esc(a)+'</b>'+esc(b)+'</div>').join('');
+}
+/* ================= самотест + boot ================= */
+for(const l of LEVELS){
+  try{const r=run(l.solution);console.assert(!r.failed&&r.st.goals.length===0&&!r.st.sorry,'SELFTEST FAIL',l.id,r)}
+  catch(e){console.error('SELFTEST ERROR',l.id,e)}
+}
+$('stLevels').textContent=LEVELS.length;
+$('stRules').textContent=Object.keys(RULES).length;
+applyPrefs();
+loadLevel();
+renderMini();
+updateProgress();
 </script>
 </body>
 </html>
