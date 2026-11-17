@@ -242,9 +242,15 @@ function closure(eqs){ // eqs: [{l,r}] — доказанные равенств
    5. БИБЛИОТЕКА ПРАВИЛ (схемы с метапеременными ?X,?Y,?Z)
    ============================================================ */
 function mkRule(id,schema,premises=[],side=null){
-  const P=makeParser(schema);
-  const c=P.eqOnly();
-  return {id,display:schema.replace(/\?/g,''),concl:c,premises:premises.map(s=>makeParser(s).eqOnly()),side};
+  const c=makeParser(schema).eqOnly();
+  return {
+    id,
+    display:schema.replace(/\?/g,''),
+    premisesDisplay:premises.map(s=>s.replace(/\?/g,'')),
+    concl:c,
+    premises:premises.map(s=>makeParser(s).eqOnly()),
+    side
+  };
 }
 const RULES={
   mul_assoc:          mkRule('mul_assoc','(?X * ?Y) * ?Z == ?X * (?Y * ?Z)'),
@@ -460,6 +466,8 @@ function verify(src,task){
     return {status:'cond',message:'Цель (goal) изменена — её нельзя менять.',rows};
 
   const env={}, lets={}, letEqs=[], facts={}, invSet=new Set(prog.assumes.map(a=>'v:'+a));
+    // регистрируем матрицы из блока given в типовом окружении
+  for(const m of prog.mats) env[m.name]={r:m.r,c:m.c};
   const seen=new Set(); let algebraUsed=false, anyFail=false;
   const trivial=t=>({l:t,r:t}); // регистрация термов шага без их склейки
 
@@ -562,7 +570,7 @@ function loadTask(){
   $('tTitle').textContent=cur.title; $('tDiff').textContent=cur.diff;
   $('tStmt').innerHTML=cur.stmt; $('tHint').textContent=cur.hint;
   $('tRules').innerHTML=cur.rules.map(id=>{const r=RULES[id];
-    return `<div class="rule"><span class="rn">${id}</span><code>${esc(r.display)}</code>${r.side?'<span class="side">требует: обратимость X</span>':''}${r.premises.length?`<span class="side">предпосылки: ${r.premises.map(p=>'см. схему ('+r.premises.length+')').join('')[0]||''}</span>`:''}</div>`;}).join('');
+        return `<div class="rule"><span class="rn">${id}</span><code>${esc(r.display)}</code>${r.side?'<span class="side">требует: обратимость X</span>':''}${r.premises.length?`<span class="side">предпосылки: ${esc(r.premisesDisplay.join('; '))}</span>`:''}</div>`;}).join('');
   $('ed').value=localStorage.getItem('mp_'+cur.id)||cur.skeleton;
   gutter(); $('res').innerHTML='<div class="banner idle">Напишите доказательство и нажмите «Проверить».</div>';
 }
@@ -601,6 +609,13 @@ $('ed').addEventListener('keydown',e=>{
   if(e.key==='Tab'){ e.preventDefault(); const t=e.target,s=t.selectionStart; t.value=t.value.slice(0,s)+'    '+t.value.slice(t.selectionEnd); t.selectionStart=t.selectionEnd=s+4; gutter(); }
   if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); run(); }
 });
+
+// самотест: эталонные решения обязаны проходить формальную проверку
+for(const t of TASKS){
+  const v=verify(t.solution,t);
+  console.assert(v.status==='formal','SELFTEST FAIL:',t.id,v);
+}
+
 loadTask();
 </script>
 </body>
